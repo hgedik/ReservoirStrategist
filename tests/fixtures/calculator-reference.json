@@ -1,0 +1,89 @@
+{
+  "source": "https://github.com/alter/tiles-survive-calculator/blob/main/docs/index.html",
+  "checked": "2026-10-31",
+  "profile": {
+    "phase2": 15,
+    "duration": 60,
+    "waterStart": 20,
+    "captureDelay": 0
+  },
+  "buildings": [
+    {
+      "id": "central",
+      "name": "Central Reservoir",
+      "rate": 1800,
+      "ftc": 9000,
+      "phase": 2
+    },
+    {
+      "id": "wtc1",
+      "name": "Water Treatment Center #1",
+      "rate": 1200,
+      "ftc": 6000,
+      "phase": 1
+    },
+    {
+      "id": "wtc2",
+      "name": "Water Treatment Center #2",
+      "rate": 1200,
+      "ftc": 6000,
+      "phase": 1
+    },
+    {
+      "id": "wpp1",
+      "name": "Water Processing Plant #1",
+      "rate": 600,
+      "ftc": 3000,
+      "phase": 1
+    },
+    {
+      "id": "wpp2",
+      "name": "Water Processing Plant #2",
+      "rate": 600,
+      "ftc": 3000,
+      "phase": 1
+    },
+    {
+      "id": "wpp3",
+      "name": "Water Processing Plant #3",
+      "rate": 600,
+      "ftc": 3000,
+      "phase": 1
+    },
+    {
+      "id": "wpp4",
+      "name": "Water Processing Plant #4",
+      "rate": 600,
+      "ftc": 3000,
+      "phase": 1
+    },
+    {
+      "id": "solar",
+      "name": "Solar Power Station",
+      "rate": 240,
+      "ftc": 1200,
+      "phase": 1
+    },
+    {
+      "id": "helipad",
+      "name": "Abandoned Helipad",
+      "rate": 240,
+      "ftc": 1200,
+      "phase": 1
+    },
+    {
+      "id": "munitions",
+      "name": "Munitions Factory",
+      "rate": 240,
+      "ftc": 1200,
+      "phase": 2
+    },
+    {
+      "id": "dev",
+      "name": "Dev Compound",
+      "rate": 240,
+      "ftc": 1200,
+      "phase": 2
+    }
+  ]
+}

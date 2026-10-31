@@ -305,3 +305,108 @@ test('Roster import is processed locally and only saves after preview confirmati
   assert.equal(run('state.players.length'),0);assert.equal(ctx.localStorage.getItem('rr-strategy-commander-v1'),null);
   ctx.confirmImport();assert.equal(run('state.players.length'),42);assert.equal(JSON.parse(ctx.localStorage.getItem('rr-strategy-commander-v1')).players.length,42);
 });
+
+test('Roster Power sorting supports both directions without mutating saved order',()=>{
+  const {run}=app();const before=run('JSON.stringify(state)');
+  assert.equal(run("sortRosterPlayers(state.players,state.assign,'power','desc')[0].power"),196.75);
+  assert.equal(run("sortRosterPlayers(state.players,state.assign,'power','asc')[0].power"),63.5);
+  assert.equal(run('JSON.stringify(state)'),before);
+});
+
+test('Roster sorting groups status, role and numbered teams; unassigned players stay last',()=>{
+  const {run}=app();
+  assert.equal(run("sortRosterPlayers(state.players,state.assign,'status','asc')[0].status"),'main');
+  assert.equal(run("sortRosterPlayers(state.players,state.assign,'status','desc')[0].status"),'pool');
+  assert.equal(run("getAssign(sortRosterPlayers(state.players,state.assign,'role','asc')[0]).role"),'killer');
+  assert.equal(run("sortRosterPlayers(state.players,state.assign,'role','desc').at(-1).status"),'pool');
+  assert.equal(run("getAssign(sortRosterPlayers(state.players,state.assign,'team','asc')[0]).team"),'T1');
+  assert.equal(run("getAssign(sortRosterPlayers(state.players,state.assign,'team','desc')[0]).team"),'T6');
+  assert.equal(run("sortRosterPlayers([{id:'a',status:'main'},{id:'b',status:'main'}],{a:{team:'T10'},b:{team:'T2'}},'team','asc')[0].id"),'b');
+});
+
+test('Roster sorting is stable for tied values and original order remains available',()=>{
+  const {run}=app();
+  assert.equal(run("sortRosterPlayers([{id:'a',power:50},{id:'b',power:50}],{},'power','desc').map(p=>p.id).join(',')"),'a,b');
+  assert.equal(run("sortRosterPlayers(state.players,state.assign,'original','desc').map(p=>p.id).join(',')"),run("state.players.map(p=>p.id).join(',')"));
+});
+
+test('Roster JSON export includes the complete strategy and locks irrespective of view sorting',()=>{
+  const {run,ctx}=app();let exported;
+  ctx.download=(name,body,type)=>{exported={name,data:JSON.parse(body),type};};
+  run("state.players[2].teamLock=true;rosterFilter='reserve';rosterSort='power';rosterSortDirection='desc'");
+  ctx.exportJSON();assert.equal(exported.data.players.length,42);assert.equal(exported.data.players[2].teamLock,true);
+  assert.equal(exported.data.config.teams,6);assert.equal(exported.type,'application/json');
+  assert.equal(run('state.players[0].id'),exported.data.players[0].id);
+});
+
+test('Conflicting same-time manual capture/release events must not create phantom income',()=>{
+  const {run}=app();
+  assert.throws(()=>run("evaluateScenario({buildings:{test:{events:'0:us;0:none'}}},state.config,[{id:'test',name:'Test building',phase:1,rate:600,ftc:3000}])"),/aynı dakika/);
+});
+
+test('Phase-I summary excludes captures and tanks exactly at the Phase-II boundary',()=>{
+  const {run}=app();
+  const result=JSON.parse(run("JSON.stringify(evaluateScenario({buildings:{test:{events:'15:us'}},waterUs:2,waterUnit:500},{...state.config,phase2:15,waterStart:15,captureDelay:0},[{id:'test',name:'Test building',phase:2,rate:1800,ftc:9000}]))"));
+  assert.equal(result.phase1Us,0);assert.equal(result.usSeries[15],10000);assert.equal(result.phase1Us+result.phase2Us,result.us);
+});
+
+test('End-income indicator includes captures during the final fractional minute',()=>{
+  const {run,elements}=app();run("state.buildings=[BASE_BUILDINGS[0]];state.sim={buildings:{central:{events:'59.5:us',ftc:'auto'}},waterUs:0,waterThem:0,waterUnit:500};renderSimulator()");
+  assert.match(elements.get('simKpis').innerHTML,/1\.800 \/ 0/);
+});
+
+test('All reference buildings, full English names, rates, FTC and phases match audited source facts',()=>{
+  const {run}=app();const reference=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/calculator-reference.json'),'utf8'));
+  const actual=JSON.parse(run('JSON.stringify(BASE_BUILDINGS.map(({id,name,rate,ftc,phase})=>({id,name,rate,ftc,phase})))'));
+  assert.deepEqual(actual,reference.buildings);
+});
+
+test('Reference scoring agrees at every source checkpoint with matched timing and ownership',()=>{
+  const {ctx}=app();const reference=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/calculator-reference.json'),'utf8'));
+  const profile={phase2:15,duration:60,waterStart:20,captureDelay:0};
+  for(const scenario of ['all-us','mixed','no-ftc']){
+    const sim={buildings:{},waterUs:5,waterThem:15,waterUnit:500};
+    reference.buildings.forEach((b,i)=>{const owner=scenario==='all-us'||i%2===0?'us':'them';sim.buildings[b.id]={p1:b.phase===1?owner:'none',p2:owner,ftc:scenario==='no-ftc'?'none':'auto',delay1:0,delay2:0};});
+    const result=ctx.evaluateScenario(sim,profile);
+    for(const time of [0,10,15,20,30,45,60])for(const owner of ['us','them']){
+      const expected=reference.buildings.reduce((sum,b,i)=>{const side=scenario==='all-us'||i%2===0?'us':'them',unlock=b.phase===2?15:0;return sum+(side===owner&&time>=unlock?b.rate*(time-unlock)+(scenario==='no-ftc'?0:b.ftc):0);},0)+(time>=20?(owner==='us'?5:15)*500:0);
+      assert.equal(result[owner==='us'?'usSeries':'themSeries'][time],expected,`${scenario} ${owner} at ${time}`);
+    }
+    assert.equal(result.phase1Us+result.phase2Us,result.us);assert.equal(result.phase1Them+result.phase2Them,result.them);
+  }
+});
+
+test('All-building zero-delay reference total is 457200; tanks are one-off additions',()=>{
+  const {run}=app();
+  assert.equal(run("evaluateScenario({buildings:Object.fromEntries(BASE_BUILDINGS.map(b=>[b.id,{p1:b.phase===1?'us':'none',p2:'us',ftc:'auto',delay1:0,delay2:0}]))},{...state.config,phase2:15,captureDelay:0}).us"),457200);
+});
+
+test('Full names render in mission views and exports; old saved labels and imported aliases remain compatible',()=>{
+  const {run,elements,ctx}=app();
+  assert.equal(run("siteName('wtc1')"),'Water Treatment Center #1');
+  for(const alias of ['WTC I','Water Treatment Center I','Water Treatment Center #1'])assert.equal(run(`resolveSite(${JSON.stringify(alias)})`),'wtc1');
+  for(const alias of ['WPP IV','Water Processing Plant IV','Water Processing Plant #4'])assert.equal(run(`resolveSite(${JSON.stringify(alias)})`),'wpp4');
+  run("state.explanations={'p1:T1':'WTC I: previous generated reason'};state=normalizeState(state)");assert.match(run("state.explanations['p1:T1']"),/^Water Treatment Center #1:/);
+  run("switchTab('simulator')");assert.ok(elements.get('simTable').innerHTML.includes('Water Treatment Center #2'));assert.ok(!elements.get('simTable').innerHTML.includes('WTC II'));
+  run("switchTab('battlefield')");assert.ok(elements.get('mapSvg').innerHTML.includes('Water Processing'));assert.ok(!elements.get('mapSvg').innerHTML.includes('WPP IV'));
+  let text;ctx.download=(name,body)=>{text=body};ctx.exportOrders();assert.match(text,/Water Treatment Center/);assert.ok(!text.includes('WTC I'));
+});
+
+test('Capture-delay changes propagate to automatic scenarios without discarding custom timing',()=>{
+  const {run}=app();run('state.sim.buildings.wtc1.delay1=2;updateSettings({captureDelay:0})');
+  assert.equal(run('state.sim.buildings.central.delay2'),0);assert.equal(run('state.sim.buildings.wtc1.delay1'),2);assert.equal(run('state.sim.buildings.wtc1.delay2'),0);
+});
+
+test('Active special effects are shown without inventing water-production multipliers',()=>{
+  const {run,elements}=app();
+  run("state.sim.buildings=Object.fromEntries(BASE_BUILDINGS.map(b=>[b.id,{p1:b.phase===1?'us':'none',p2:'us',ftc:'auto',delay1:0,delay2:0}]));renderSimulator()");
+  assert.match(elements.get('simBonuses').innerHTML,/Solar Power Station/);assert.match(elements.get('simBonuses').innerHTML,/Dev Compound/);assert.match(elements.get('simBonuses').innerHTML,/4 kata/);
+  assert.equal(run("evaluateScenario({buildings:{munitions:{events:'15:us'},wtc1:{events:'0:us'}}},{...state.config,phase2:15,captureDelay:0}).us"),90000);
+});
+
+test('Reference timing is opt-in and preserves the commander default and manual locks',()=>{
+  const {run}=app();assert.equal(run('BASE_CONFIG.phase2'),12);
+  run("state.players[2].teamLock=true;state.targetLocks.p1.T1=true");const team=run('state.assign.p3.team'),target=run('state.targets.p1.T1');
+  run('updateSettings({phase2:15,duration:60,waterStart:20,captureDelay:0})');
+  assert.equal(run('state.config.phase2'),15);assert.equal(run('state.config.captureDelay'),0);assert.equal(run('state.assign.p3.team'),team);assert.equal(run('state.targets.p1.T1'),target);
+});

@@ -63,3 +63,28 @@ The earlier implementation did not satisfy private-roster distribution requireme
 With the user's explicit authorization, dev is rebuilt as a clean snapshot on top of the original license-only main commit, omitting the development commit that contained real data. Publication uses an explicit force-with-lease against the previously inspected remote tip; main and tags are not rewritten. No mirror push is used, so application-managed local refs are not published. Rewriting branch history does not erase old external clones, forks, cached commit views or local recovery refs. GitHub documents those limits and possible support follow-up in its [sensitive-data removal guide](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository).
 
 Privacy validation passed: 35 Node tests and six browser tests, including fresh-origin empty startup and synthetic XLSX import. A scan of current app/document/test files found no original roster names; older external or local recovery copies require separate handling.
+
+## Roster editing follow-up
+
+The roster now exposes the existing full JSON backup from its own toolbar and supports stable view-only sorting by numeric Power, roster status, assigned role and numbered team, in both directions. Unassigned roles/teams remain last. The original player array is not reordered.
+
+The scroll regression came from replacing the entire scroll container on each committed field change. The renderer now reconciles rows by player ID, updates existing input/select properties, and preserves scroll offsets and connected focus targets. Adding a player explicitly reveals and focuses the new name field. Browser coverage checks DOM identity, focus, both table scroll axes and page scroll, including the new-player blur sequence. Actual typing followed by Tab also retained the page/table vertical offsets and moved focus to Power.
+
+Validation: 39 Node tests and 10 browser tests passed. Only synthetic player data was used.
+
+## Building-name and scoring re-audit — 2026-10-31
+
+The English names and all 11 rate/FTC/stage records were rechecked against the [calculator source](https://github.com/alter/tiles-survive-calculator/blob/main/docs/index.html). No building was missing. The independent reference facts in `tests/fixtures/calculator-reference.json` record the audited date, source and matched profile. Canonical names now use the source's numbered full names. Stable IDs and legacy import aliases are preserved; generated explanation prefixes migrate without changing notes or player data.
+
+Matched-input parity covers zero, 10, 15, 20, 30, 45 and 60 minutes, all-allied/mixed ownership, disabled FTC and one-off tanks. It uses an independently written reduction of the audited facts rather than executing third-party JavaScript. With phase opening 15, zero delay and no tanks, continuous control of all buildings gives 457200 at minute 60. The app's default phase opening remains 12; comparison requires equal inputs, not an override of commander settings. Source special bonuses are descriptions, not water-rate multipliers. Dev Compound's increasing wave strength (up to 4x) is informational.
+
+Four additional issues were reproduced in failing tests, then fixed:
+
+1. A same-time capture followed by neutral control silently discarded the neutral event, producing phantom ownership. Conflicting manual events at one time now fail validation; duplicate identical events may coalesce. Automatic zero-delay transitions retain their intentional neutral-to-capture collapse.
+2. Phase-I totals included FTC/tanks at the Phase-II boundary. Interval production is still integrated to the boundary, while instant events at that boundary belong to Phase II. Inclusive chart samples retain reference-calculator checkpoint semantics. Phase totals reconcile to the final score.
+3. The last income indicator sampled at the start of the final minute and missed fractional-minute captures. It now reports the ownership rate immediately before battle end, including fractional changes but excluding captures at the exact final instant.
+4. Changing the global capture delay left old derived delays in automatic simulations. Matching default delays now follow the global setting; explicitly different delays and manual event timelines are retained.
+
+Presentation now uses full names in mission dropdowns, the schematic map, simulation/control screens, warnings and exports. The map uses readable multi-line labels and its own horizontal scroller on small screens. Water Tanks remain a separate collection event, not a fabricated income building. Active special effects and Phase-I/II totals are visible in the simulator.
+
+Validation: 49 Node tests and 12 browser tests passed. Browser tests include source-name coverage, the opt-in reference timing and an all-building UI result of 457200; prior roster scroll/JSON/sorting tests still pass. Mobile inspection showed a 301px map viewport scrolling its 880px drawing with no horizontal page overflow.

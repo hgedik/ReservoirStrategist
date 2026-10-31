@@ -28,5 +28,52 @@ document.getElementById('run').addEventListener('click',async()=>{
   await test('İçe aktarma önizlemesi uygulamadan vazgeçilebilir',async()=>{
     app.switchTab('roster');await app.importFile(new File([JSON.stringify(players)],'roster.json',{type:'application/json'}));assert(!doc.getElementById('importPreview').hidden,'Önizleme');doc.getElementById('cancelImport').click();assert(doc.getElementById('importPreview').hidden,'Vazgeç');
   });
+  await test('Kadro sıralama kontrolleri Power, kadro, rol ve takım sıralar',()=>{
+    app.switchTab('roster');
+    const set=(id,value)=>{doc.getElementById(id).value=value;doc.getElementById(id).dispatchEvent(new app.Event('change',{bubbles:true}));};
+    set('rosterSort','power');let powers=[...doc.querySelectorAll('#rosterTable [data-field="power"]')].map(el=>Number(el.value.replaceAll('.','').replace(',','.')));assert(powers.every((v,i)=>!i||powers[i-1]>=v),'Power azalan');
+    set('rosterSortDirection','asc');powers=[...doc.querySelectorAll('#rosterTable [data-field="power"]')].map(el=>Number(el.value.replaceAll('.','').replace(',','.')));assert(powers.every((v,i)=>!i||powers[i-1]<=v),'Power artan');
+    set('rosterSort','status');assert(doc.querySelector('#rosterTable [data-field="status"]').value==='main','Asiller önce');
+    set('rosterSort','role');assert(doc.querySelector('#rosterTable [data-field="role"]').value==='killer','Killer önce');
+    set('rosterSort','team');assert(doc.querySelector('#rosterTable [data-field="team"]').value==='T1','Takım sırası');
+    set('rosterSort','original');
+  });
+  await test('Alan değişikliği tabloyu, odaklanan alanı ve kaydırma konumunu korur',()=>{
+    const viewport=doc.querySelector('#rosterTable .tablewrap'),row=viewport.querySelectorAll('tbody tr')[20],input=row.querySelector('[data-field="name"]');
+    viewport.scrollTop=500;viewport.scrollLeft=350;app.scrollTo({top:500,behavior:'instant'});input.focus({preventScroll:true});
+    const before={top:viewport.scrollTop,left:viewport.scrollLeft,y:app.scrollY};
+    input.value='Test oyuncusu düzenlendi';input.dispatchEvent(new app.Event('change',{bubbles:true}));
+    assert(doc.querySelector('#rosterTable .tablewrap')===viewport,'Kaydırma alanı yeniden oluşturulmamalı');assert(input.isConnected,'Düzenlenen alan korunmalı');assert(doc.activeElement===input,'Odak korunmalı');
+    assert(viewport.scrollTop===before.top&&viewport.scrollLeft===before.left&&app.scrollY===before.y,'Kaydırma konumu değişmemeli');
+  });
+  await test('Yeni oyuncu ekledikten sonra alan dışına çıkmak konumu kaybettirmez',()=>{
+    doc.getElementById('addPlayer').click();const input=doc.activeElement,viewport=doc.querySelector('#rosterTable .tablewrap');
+    assert(input.dataset.field==='name','Yeni oyuncunun adı odaklanmalı');const before={top:viewport.scrollTop,left:viewport.scrollLeft,y:app.scrollY};
+    input.value='Yeni yapay oyuncu';input.dispatchEvent(new app.Event('change',{bubbles:true}));input.blur();
+    assert(input.isConnected,'Yeni oyuncu alanı korunmalı');assert(viewport.scrollTop===before.top&&viewport.scrollLeft===before.left&&app.scrollY===before.y,'Yeni oyuncuyu düzenlerken başa dönülmemeli');
+  });
+  await test('Kadro ekranının JSON düğmesi tam yedek formatını dışa aktarır',()=>{
+    const original=app.download;let result;
+    try{app.download=(name,body,type)=>{result={name,data:JSON.parse(body),type};};doc.getElementById('rosterJsonExport').click();assert(result?.type==='application/json','JSON indirme');assert(result.data.players.length===doc.querySelectorAll('#rosterTable tbody tr').length,'Tüm oyuncular');assert(result.data.config&&result.data.assign,'Ayarlar ve kilitli atamalar');}finally{app.download=original;}
+  });
+  await test('Bina adları tam referans adlarıyla hedef listesi, harita ve simülatörde gösterilir',async()=>{
+    const reference=await(await fetch('./fixtures/calculator-reference.json')).json();
+    app.switchTab('teams');doc.querySelector('[data-phase="2"]').click();
+    const options=[...doc.querySelectorAll('select[data-target-key="p2"] option')].map(o=>o.textContent);
+    for(const b of reference.buildings)assert(options.includes(b.name),'Tam hedef adı: '+b.name);
+    app.switchTab('battlefield');for(const b of reference.buildings){const node=doc.querySelector(`[data-map-site="${b.id}"]`);assert(node.querySelector('title').textContent.includes(b.name),'Harita adı: '+b.name);assert(node.querySelector('.node-title').textContent.replace(/\s+/g,' ').trim()===b.name,'Görünür harita etiketi: '+b.name);}
+    app.switchTab('simulator');for(const b of reference.buildings)assert(doc.getElementById('simTable').textContent.includes(b.name),'Simülatör adı: '+b.name);
+  });
+  await test('Referans zamanlaması ve tüm binalar senaryosu arayüzde 457200 su verir',async()=>{
+    const reference=await(await fetch('./fixtures/calculator-reference.json')).json();app.switchTab('settings');doc.getElementById('referenceTiming').click();
+    assert(doc.getElementById('setPhase2').value==='15','Phase II 15');assert(doc.getElementById('setCaptureDelay').value==='0','Gecikme sıfır');app.switchTab('simulator');
+    for(const b of reference.buildings){for(const phase of (b.phase===1?['p1','p2']:['p2'])){const el=doc.querySelector(`[data-sim-site="${b.id}"][data-sim-field="${phase}"]`);el.value='us';el.dispatchEvent(new app.Event('change',{bubbles:true}));}}
+    assert(doc.querySelector('#simKpis .num').textContent==='457.200','Referans 60. dakika sonucu');assert(doc.getElementById('phaseWaterSummary').textContent.includes('105.600'),'Phase I sınırında yeni faz bonusu sayılmaz');
+    assert(doc.getElementById('simBonuses').textContent.includes('Dev Compound'),'Aktif özel etkiler');
+  });
   output.textContent+=`\n${passed} passed, ${failed} failed`;button.disabled=false;
 });
+
+const testFrame=document.getElementById('app');
+if(testFrame.contentDocument?.readyState==='complete')document.getElementById('run').disabled=false;
+else testFrame.addEventListener('load',()=>{document.getElementById('run').disabled=false;},{once:true});

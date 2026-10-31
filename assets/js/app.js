@@ -19,10 +19,11 @@ function handlePlayerChange(el){
     }else if(f==='team'){if(a.role==='killer')fail('Killer takıma atanamaz.');a.team=v;p.teamLock=true;candidate.assign[p.id]=a;}
     for(const [team,id] of Object.entries(candidate.leaders))if(candidate.assign[id]?.team!==team||candidate.assign[id]?.role!=='holder')delete candidate.leaders[team];
     commitEdit(candidate);
-  }catch(e){state=before;toast(e.message,true);renderAll();}
+  }catch(e){state=before;const original=before.players.find(p=>p.id===el.dataset.player);if(original){const a=getAssign(original);if(el.type==='checkbox')el.checked=!!original[f];else el.value=f==='role'?a.role:f==='team'?a.team:f==='power'?fmt(original.power,2):original[f]??'';}toast(e.message,true);renderAll();}
 }
 function updateSettings(changes){
   try{const candidate=deepcopy(state);candidate.config={...candidate.config,...changes,weights:{...candidate.config.weights,...changes.weights}};validateConfig(candidate.config);
+    if(candidate.config.captureDelay!==state.config.captureDelay)for(const row of Object.values(candidate.sim.buildings))if(!String(row.events||'').trim())for(const key of ['delay1','delay2'])if(row[key]===state.config.captureDelay)row[key]=candidate.config.captureDelay;
     for(const key of TARGET_KEYS)for(const team of Object.keys(candidate.targets[key]))if(Number(team.slice(1))>candidate.config.teams){if(candidate.targetLocks[key][team])fail(team+': hedef kilidini kaldırmadan takım sayısı azaltılamaz.');delete candidate.targets[key][team];delete candidate.targetLocks[key][team];}
     if(!candidate.players.length){state=normalizeState(candidate);autosave();renderAll();toast('Ayarlar kaydedildi; şimdi kadronuzu içe aktarabilirsiniz.');return;}
     const plan=generatePlan(candidate.config.mode,candidate);candidate.assign=plan.assign;candidate.targets=plan.targets;candidate.explanations=plan.explanations;candidate.lastGenerated=new Date().toISOString();
@@ -51,15 +52,15 @@ function bindEvents(){
     if(target.dataset.phase){currentPhase=Number(target.dataset.phase);renderTeams();return;}
     switch(target.id){
       case'generateBtn':case'quickGenerate':recomputePlan();break;
-      case'saveBtn':store();break;case'jsonBtn':exportJSON();break;
-      case'addPlayer':{const c=deepcopy(state);c.players.push(normalizePlayer({id:'new'+crypto.randomUUID(),name:'Yeni oyuncu',power:50,status:'pool'},c.players.length));commitEdit(c);break;}
+      case'saveBtn':store();break;case'jsonBtn':case'rosterJsonExport':exportJSON();break;
+      case'addPlayer':{const c=deepcopy(state),player=normalizePlayer({id:'new'+crypto.randomUUID(),name:'Yeni oyuncu',power:50,status:'pool'},c.players.length);c.players.push(player);rosterFilter='all';rosterTerm='';commitEdit(c);focusRosterPlayer(player.id);break;}
       case'importBtn':$('fileInput').click();break;case'jsonImport':$('jsonFileInput').click();break;
       case'confirmImport':confirmImport();break;case'cancelImport':pendingImport=null;renderImportPreview();break;
       case'replaceBtn':replacePlayer();break;case'resetLocks':resetLocks();break;
       case'csvExport':exportCSV();break;case'ordersExport':if(planErrors(state).length){toast('Önce plan hatalarını düzeltin: '+planErrors(state).join(' '),true);}else exportOrders();break;
       case'printBtn':window.print();break;case'simFromPlan':resetSimulationFromPlan();break;
       case'simReset':state.sim.buildings=Object.fromEntries(state.buildings.map(b=>[b.id,emptySimRow()]));autosave();renderSimulator();break;
-      case'compareReload':renderCompare();break;case'applySettings':handleSettings();break;
+      case'compareReload':renderCompare();break;case'applySettings':handleSettings();break;case'referenceTiming':updateSettings({phase2:15,duration:60,waterStart:20,captureDelay:0});break;
       case'resetBuildings':state.buildings=BASE_BUILDINGS.map(b=>({...b,priority:1,resistance:0}));autosave();renderAll();break;
       case'clearStorage':clearLocalRoster();break;
     }
@@ -77,7 +78,9 @@ function bindEvents(){
     if(el.dataset.buildingId){const c=deepcopy(state);c.buildings.find(b=>b.id===el.dataset.buildingId)[el.dataset.buildingField]=finiteValue(el.value,'Bina değeri',0,el.dataset.buildingField==='priority'?5:1e8);commitEdit(c);return;}
     switch(el.id){
       case'quickTeams':updateSettings({teams:Number(el.value)});break;case'quickKillers':updateSettings({killers:Number(el.value)});break;case'quickMode':updateSettings({mode:el.value});break;
-      case'rosterFilter':rosterFilter=el.value;renderRoster();break;case'mapPhase':mapPhase=Number(el.value);renderBattlefield();break;
+      case'rosterFilter':rosterFilter=el.value;renderRoster();break;
+      case'rosterSort':rosterSort=el.value;rosterSortDirection=rosterSort==='power'?'desc':'asc';renderRoster();break;
+      case'rosterSortDirection':rosterSortDirection=el.value;renderRoster();break;case'mapPhase':mapPhase=Number(el.value);renderBattlefield();break;
       case'waterUs':case'waterThem':case'waterUnit':{const c=deepcopy(state);c.sim[el.id]=finiteValue(el.value,'Tank değeri',0,1e9,true);evaluateScenario(c.sim,c.config,c.buildings);state=c;autosave();renderSimulator();break;}
       case'waterStart':updateSettings({waterStart:Number(el.value)});break;
     }

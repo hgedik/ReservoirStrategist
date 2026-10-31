@@ -27,7 +27,8 @@ function targetScore(team,b,phase,mode,s,previous) {
 function resolveSite(value,s=state) {
   const v=String(value||'').trim().toLocaleLowerCase('en-US').replace(/[ #_-]+/g,'');
   const aliases={central:'central',solarplant:'solar',solarpowerstation:'solar',helipad:'helipad',abandonedhelipad:'helipad',munitionsfactory:'munitions',devcompound:'dev'};
-  return aliases[v]||s.buildings.find(b=>[b.id,b.short,b.name].some(x=>x.toLowerCase().replace(/[ #_-]+/g,'')===v))?.id||'';
+  const legacy={watertreatmentcenteri:'wtc1',watertreatmentcenterii:'wtc2',waterprocessingplanti:'wpp1',waterprocessingplantii:'wpp2',waterprocessingplantiii:'wpp3',waterprocessingplantiv:'wpp4'};
+  return aliases[v]||legacy[v]||s.buildings.find(b=>[b.id,b.short,b.name].some(x=>x.toLowerCase().replace(/[ #_-]+/g,'')===v))?.id||'';
 }
 function assignTargets(teams,mode,s) {
   const targets=Object.fromEntries(TARGET_KEYS.map(k=>[k,{}])),explanations={},context={...s,targets};
@@ -58,7 +59,7 @@ function assignTargets(teams,mode,s) {
     for(const t of teams){
       targets[sub][t.id]=s.targetLocks?.[sub]?.[t.id]?s.targets[sub][t.id]:(secondary.shift()?.id||(phase===2?'water':'reinforce'));
       const b=s.buildings.find(b=>b.id===targets[key][t.id]);
-      explanations[`${key}:${t.id}`]=`${b.short}: ${fmt(b.rate)}/dk, FTC ${fmt(b.ftc)}; ${fmt(t.power,2)} M takım gücü. Öncelik ${fmt(b.priority??1,1)}, rakip güç varsayımı ${fmt(b.resistance??0,2)} M. ${locked[t.id]?'Manuel hedef kilidi korundu.':'Üretim, FTC, özel etki, direnç ve faz devamlılığı birlikte değerlendirildi.'}`;
+      explanations[`${key}:${t.id}`]=`${b.name}: ${fmt(b.rate)}/dk, FTC ${fmt(b.ftc)}; ${fmt(t.power,2)} M takım gücü. Öncelik ${fmt(b.priority??1,1)}, rakip güç varsayımı ${fmt(b.resistance??0,2)} M. ${locked[t.id]?'Manuel hedef kilidi korundu.':'Üretim, FTC, özel etki, direnç ve faz devamlılığı birlikte değerlendirildi.'}`;
     }
   }
   return {targets,explanations};
@@ -110,8 +111,8 @@ function warnings(){const issues=planErrors(state).map(txt=>({kind:'bad',txt}));
   if(reserve().length!==state.config.reserveLimit)issues.push({kind:'warn',txt:`Yedek: ${reserve().length}/${state.config.reserveLimit}.`});
   for(const t of teamsFrom())if(!t.support.length)issues.push({kind:'warn',txt:t.id+': Support kapasitesi yok; ikincil göreve Holder çıkarmayın.'});
   for(const p of selected())if(!p.coming||!p.joined)issues.push({kind:'warn',txt:`${p.name}: ${!p.coming?'katılım teyidi yok':'katılmadı'}.`});
-  for(const phase of [1,2]){const key=phase===1?'p1':'p2',covered=new Set(Object.values(state.targets[key]));for(const b of state.buildings.filter(b=>(phase===2||b.phase===1)&&b.rate>=1200))if(!covered.has(b.id))issues.push({kind:'warn',txt:`Phase ${phase}: ${b.short} korunmuyor (${fmt(b.rate)}/dk).`});
-    for(const id of covered){const teams=teamsFrom().filter(t=>state.targets[key][t.id]===id),b=bById(id);if(b&&teamPower(teams.flatMap(t=>t.players))<(b.resistance||0))issues.push({kind:'warn',txt:`Phase ${phase} ${b.short}: atanan güç, girilen rakip güç varsayımının altında.`});}}
+  for(const phase of [1,2]){const key=phase===1?'p1':'p2',covered=new Set(Object.values(state.targets[key]));for(const b of state.buildings.filter(b=>(phase===2||b.phase===1)&&b.rate>=1200))if(!covered.has(b.id))issues.push({kind:'warn',txt:`Phase ${phase}: ${b.name} korunmuyor (${fmt(b.rate)}/dk).`});
+    for(const id of covered){const teams=teamsFrom().filter(t=>state.targets[key][t.id]===id),b=bById(id);if(b&&teamPower(teams.flatMap(t=>t.players))<(b.resistance||0))issues.push({kind:'warn',txt:`Phase ${phase} ${b.name}: atanan güç, girilen rakip güç varsayımının altında.`});}}
   if(startupError)issues.unshift({kind:'bad',txt:startupError});return issues;
 }
 function transitionFor(t,targets=state.targets){
