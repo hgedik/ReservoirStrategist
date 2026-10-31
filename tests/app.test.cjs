@@ -140,7 +140,7 @@ test('No player is duplicated; output is deterministic across modes and team cou
 
 test('Locked Support stays Support; locked Holder and Killer roles stay fixed', () => {
   const { run }=app();
-  run("for(const role of ROLES){const p=selected().find(p=>getAssign(p).role===role);p.roleLock=true;p.rolePref=role;}");
+  run("for(const role of ['killer','holder','support']){const p=selected().find(p=>getAssign(p).role===role);p.roleLock=true;p.rolePref=role;}");
   assert.equal(run("selected().filter(p=>p.roleLock).every(p=>generatePlan().assign[p.id].role===p.rolePref)"),true);
 });
 
@@ -148,7 +148,7 @@ test('JSON migration and restoration preserve settings, locks, Unicode, notes an
   const { run }=app();
   run("state.players[2].notes='مرحبا · notlar';state.players[2].teamLock=true;state.sim.tankEvents='23:biz:2';state.targetLocks.p2.T1=true;state.config.weights.special=2.5");
   assert.equal(run('JSON.stringify(normalizeState(JSON.parse(JSON.stringify(state))))'),run('JSON.stringify(state)'));
-  assert.equal(run("normalizeState({players:state.players,version:1}).version"),2);
+  assert.equal(run("normalizeState({players:state.players,version:1}).version"),3);
   assert.throws(()=>run('normalizeState({...state,version:99})'),/sürümü/);
 });
 
@@ -409,4 +409,109 @@ test('Reference timing is opt-in and preserves the commander default and manual 
   run("state.players[2].teamLock=true;state.targetLocks.p1.T1=true");const team=run('state.assign.p3.team'),target=run('state.targets.p1.T1');
   run('updateSettings({phase2:15,duration:60,waterStart:20,captureDelay:0})');
   assert.equal(run('state.config.phase2'),15);assert.equal(run('state.config.captureDelay'),0);assert.equal(run('state.assign.p3.team'),team);assert.equal(run('state.targets.p1.T1'),target);
+});
+
+
+test('Commander is optional, unique and independent, excluded from Killer selection and team power',()=>{
+  const {run}=app();assert.equal(run('commanderPlayers().length'),0);
+  run("state.players[0].rolePref='commander';state.players[0].roleLock=true;applyGenerated(generatePlan(),false)");
+  assert.equal(run('commanderPlayers()[0].id'),'p1');assert.equal(run('getAssign(commanderPlayers()[0]).team'),'');
+  assert.equal(run('killerPlayers().length'),2);assert.equal(run('teamsFrom().flatMap(t=>t.players).length'),27);
+  assert.equal(run('teamsFrom().every(t=>t.holders.length>=2)'),true);
+  const before=run('JSON.stringify(state)');run("state.players[1].rolePref='commander'");assert.throws(()=>run('generatePlan()'),/bir Commander/);
+  run('state=JSON.parse('+JSON.stringify(before)+')');run('state.players[0].teamLock=true');assert.throws(()=>run('generatePlan()'),/Commander takım kilidi/);
+});
+
+test('Commander manual edits reject duplicates atomically and disable team assignment',()=>{
+  const {run,elements}=app();
+  run("handlePlayerChange({dataset:{player:'p1',field:'role'},value:'commander'})");assert.equal(run('state.assign.p1.role'),'commander');assert.equal(run('state.assign.p1.team'),'');
+  const before=run('JSON.stringify(state)');run("handlePlayerChange({dataset:{player:'p2',field:'role'},value:'commander'})");assert.equal(run('JSON.stringify(state)'),before);
+  run("switchTab('roster')");assert.match(elements.get('rosterTable').innerHTML,/Commander/);
+  run("handlePlayerChange({dataset:{player:'p1',field:'team'},value:'T1'})");assert.equal(run('state.assign.p1.team'),'');
+});
+
+test('Commander import/export retains role and all CSV locations use full building names',()=>{
+  const {ctx,run}=app();
+  assert.equal(run("parseRosterRows(guessRows('Name;Power;Mission\\nKomutan;100;Commander'))[0].rolePref"),'commander');
+  run("state.players[0].rolePref='commander';applyGenerated(generatePlan(),false)");let csv,orders;ctx.download=(name,text)=>{if(name.endsWith('.csv'))csv=text;else orders=text;};ctx.exportCSV();ctx.exportOrders();
+  assert.match(csv,/Commander/);assert.match(csv,/Water Treatment Center/);assert.ok(!/"(?:wtc[12]|wpp[1-4]|solar|helipad|central|munitions|dev)"/.test(csv));assert.match(orders,/COMMANDER: Test Oyuncusu 01/);
+  assert.equal(run('normalizeState(JSON.parse(JSON.stringify(state))).assign.p1.role'),'commander');
+});
+
+test('Legacy building aliases are normalized in preferences and throughout generated explanations',()=>{
+  const {run}=app();run("state.players[0].phase1='WTC I';state.players[0].phase2='WPP IV';state.explanations={'p1:T1':'SOLAR: WTC II ve HELIPAD takviyesi'};state=normalizeState(state)");
+  assert.equal(run('state.players[0].phase1'),'Water Treatment Center #1');assert.equal(run('state.players[0].phase2'),'Water Processing Plant #4');
+  assert.equal(run("state.explanations['p1:T1']"),'Solar Power Station: Water Treatment Center #2 ve Abandoned Helipad takviyesi');
+});
+
+test('Every generated mode places the top three field players at Central Reservoir in Phase II',()=>{
+  const {run}=app();
+  for(const teams of [3,5,6,8])for(const mode of ['water','balanced','aggressive','defensive','fast']){
+    run(`state.config.teams=${teams};state.players[0].rolePref='commander';state.players[0].roleLock=true;applyGenerated(generatePlan('${mode}'),false)`);
+    assert.equal(run('planErrors(state).length'),0);
+    assert.equal(run("selected().filter(p=>!independentRole(getAssign(p).role)).sort((a,b)=>b.power-a.power||a.id.localeCompare(b.id)).slice(0,3).every(p=>state.targets.p2[getAssign(p,2).team]==='central')"),true);
+    assert.equal(run('teamsFrom(state.assignP2).flatMap(t=>t.players).length'),27);
+    assert.equal(run('teamsFrom(state.assignP2).every(t=>t.holders.length>=state.config.holderMin)'),true);
+  }
+});
+
+test('Phase-II rosters differ, roundtrip independently and migrate old plans without overwriting them',()=>{
+  const {run}=app();assert.equal(run('selected().some(p=>getAssign(p).team!==getAssign(p,2).team)'),true);
+  assert.equal(run('JSON.stringify(normalizeState(JSON.parse(JSON.stringify(state))))'),run('JSON.stringify(state)'));
+  run('const legacy=deepcopy(state);legacy.version=2;delete legacy.assignP2;delete legacy.leadersP2;state=normalizeState(legacy)');
+  assert.equal(run('JSON.stringify(state.assignP2)'),run('JSON.stringify(state.assign)'));
+  assert.equal(run('state.assignP2===state.assign'),false);
+  assert.equal(run("planErrors(state).some(e=>e.includes('Central Reservoir'))"),true);
+});
+
+test('Central concentration respects both team and target locks or rejects without mutation',()=>{
+  const {run}=app();run("const top=selected().filter(p=>!independentRole(getAssign(p).role)).sort((a,b)=>b.power-a.power)[0];top.teamLock=true;state.targets.p2[getAssign(top).team]='solar';state.targetLocks.p2[getAssign(top).team]=true");
+  const before=run('JSON.stringify(state)');assert.throws(()=>run('generatePlan()'),/takım kilidi.*hedef kilidi/);assert.equal(run('JSON.stringify(state)'),before);
+  run('state.targetLocks.p2={};applyGenerated(generatePlan(),false)');assert.equal(run('planErrors(state).length'),0);
+  assert.equal(run("selected().filter(p=>p.teamLock).every(p=>getAssign(p).team===getAssign(p,2).team)"),true);
+});
+
+test('Minimal Holder-only roster can split its top three over two Central teams',()=>{
+  const {run}=app();run("state=normalizeState({players:testRoster.slice(0,18).map((p,i)=>({...p,status:'main',roleLock:true,rolePref:i<2?'killer':'holder'})),config:{teams:8}});applyGenerated(generatePlan(),false)");
+  assert.equal(run('planErrors(state).length'),0);assert.equal(run('teamsFrom(state.assignP2).every(t=>t.holders.length===2)'),true);
+  assert.ok(run("Object.values(state.targets.p2).filter(id=>id==='central').length")>=2);
+});
+
+test('Role locks are honored independently in both phase rosters',()=>{
+  const {run}=app();run("for(const p of selected()){p.roleLock=true;p.rolePref=getAssign(p).role;}applyGenerated(generatePlan(),false)");
+  assert.equal(run('planErrors(state).length'),0);assert.equal(run('selected().every(p=>getAssign(p,2).role===p.rolePref)'),true);
+});
+
+test('Team cards, comparisons and CSV use Phase-II members and powers rather than Phase-I members',()=>{
+  const {ctx,run,elements}=app();run("currentPhase=2;switchTab('teams')");
+  const plan=JSON.parse(run('JSON.stringify(state)'));
+  for(const team of run('Array.from({length:state.config.teams},(_,i)=>teamId(i))')){
+    const card=elements.get('teamCards').innerHTML.split(`aria-label="${team} takım planı"`)[1].split('</article>')[0];
+    for(const p of plan.players.filter(p=>p.status==='main'&&plan.assignP2[p.id]?.team===team))assert.ok(card.includes(p.name));
+  }
+  let csv;ctx.download=(name,text)=>{csv=text};ctx.exportCSV();const rows=run('parseDelimited('+JSON.stringify(csv)+',\';\')');assert.equal(rows[0].at(-1),'Phase II Team');
+  for(const p of plan.players.filter(p=>p.status==='main'&&!['commander','killer'].includes(plan.assign[p.id]?.role))){const row=rows.find(r=>r[0]===p.name);assert.equal(row.at(-1),plan.assignP2[p.id].team);assert.equal(row[10],plan.buildings.find(b=>b.id===plan.targets.p2[plan.assignP2[p.id].team]).name);}
+  run("switchTab('compare')");assert.ok(elements.get('compareCards').innerHTML.includes('Faz II:'));
+});
+
+test('Substitute replacement transfers both phase assignments atomically',()=>{
+  const {run,elements}=app();const old=run("selected().find(p=>getAssign(p).team!==getAssign(p,2).team&&p.power<160).id");
+  const a1=run(`JSON.stringify(state.assign['${old}'])`),a2=run(`JSON.stringify(state.assignP2['${old}'])`);
+  elements.get('replaceOut').value=old;elements.get('replaceIn').value='p31';run('replacePlayer()');
+  assert.equal(run("JSON.stringify(state.assign.p31)"),a1);assert.equal(run("JSON.stringify(state.assignP2.p31)"),a2);assert.equal(run('planErrors(state).length'),0);
+});
+
+test('Battle Control and per-player transition orders follow actual Phase-II assignment',()=>{
+  const {run}=app();run("state.battle.minute=state.config.phase2;state.battle.sites.central.owner='us';state.battle.disabled=[]");
+  assert.equal(run("battleAssessment().warnings.some(t=>t.startsWith('Central Reservoir: garnizon riskli'))"),false);
+  run("state.battle.disabled=selected().filter(p=>getAssign(p,2).role==='holder'&&state.targets.p2[getAssign(p,2).team]==='central').map(p=>p.id)");
+  assert.equal(run("battleAssessment().warnings.some(t=>t.startsWith('Central Reservoir: garnizon riskli'))"),true);
+  const move=run('selected().find(p=>getAssign(p).team!==getAssign(p,2).team).id');assert.match(run(`playerTransition(state.players.find(p=>p.id==='${move}'))`),/→ T[1-8] \/ /);
+});
+
+
+test('A different Commander in each phase is rejected and legacy leader picks migrate to both phases',()=>{
+  const {run}=app();run("const legacy=deepcopy(state);legacy.version=2;delete legacy.assignP2;delete legacy.leadersP2;legacy.leaders={T1:selected().find(p=>getAssign(p).role==='holder'&&getAssign(p).team==='T1').id};state=normalizeState(legacy)");
+  assert.equal(run('state.leaders.T1'),run('state.leadersP2.T1'));
+  run("state.assign.p1={role:'commander',team:''};state.assignP2.p2={role:'commander',team:''}");assert.throws(()=>run('normalizeState(state)'),/bir Commander/);
 });
