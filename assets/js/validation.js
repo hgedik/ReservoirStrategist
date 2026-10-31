@@ -46,8 +46,10 @@ function normalizeState(raw) {
   s.players=s.players.map(normalizePlayer);const ids=new Set();for(const p of s.players){if(ids.has(p.id))fail(`Tekrarlanan oyuncu ID: ${p.id}`);ids.add(p.id);}
   s.buildings=BASE_BUILDINGS.map(b=>{
     const override=(Array.isArray(s.buildings)?s.buildings:[]).find(x=>x.id===b.id)||{};
-    return {...b,rate:finiteValue(override.rate??b.rate,b.short+' üretim',0,1e7),ftc:finiteValue(override.ftc??b.ftc,b.short+' FTC',0,1e8),priority:finiteValue(override.priority??1,b.short+' öncelik',0,5),resistance:finiteValue(override.resistance??0,b.short+' rakip güç',0,1e9)};
+    return {...b,rate:finiteValue(override.rate??b.rate,b.name+' üretim',0,1e7),ftc:finiteValue(override.ftc??b.ftc,b.name+' FTC',0,1e8),priority:finiteValue(override.priority??1,b.name+' öncelik',0,5),resistance:finiteValue(override.resistance??0,b.name+' rakip güç',0,1e9)};
   });
+  s.explanations=isRecord(s.explanations)?s.explanations:{};
+  for(const key of Object.keys(s.explanations)){let text=String(s.explanations[key]);for(const b of s.buildings)if(text.startsWith(b.short+':')){text=b.name+text.slice(b.short.length);break;}s.explanations[key]=text;}
   s.assign=s.assign??{};if(!isRecord(s.assign))fail('Atamalar nesne olmalı.');
   for(const [id,a] of Object.entries(s.assign)){
     if(!ids.has(id)||!isRecord(a)||!ROLES.includes(a.role)||typeof a.team!=='string')fail('Geçersiz oyuncu ataması: '+id);

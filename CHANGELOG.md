@@ -55,3 +55,24 @@
 - Temiz sürüm başlangıçtaki yalnızca lisans içeren committen türetildi; `main` korunur.
 - Yayında yalnızca `dev` ref'i ve beklenen eski uç için `--force-with-lease` kullanılır.
 - Eski harici klonlar, forklar ve GitHub önbelleklerinin dal güncellemesiyle silinmediği belgelendi.
+
+## Oyuncu Kadrosu iyileştirmeleri — 2026-10-31
+
+- Kadro ekranına tam kadro/ayar/kilit yedeğini indiren JSON dışa aktarma düğmesi eklendi.
+- Power, kadro durumu, rol ve takıma göre artan/azalan görünüm sıralaması eklendi; kayıtlı oyuncu dizisi değiştirilmez.
+- Alan değişikliğinde tablonun tamamen yeniden oluşturulması kaldırıldı. Satırlar ve kontroller yerinde güncellenir; yatay/dikey tablo kaydırması, sayfa konumu ve odak korunur.
+- Yeni oyuncu eklendiğinde ad alanı görünür hale getirilip odaklanır; sonraki düzenlemeler konumu kaybettirmez.
+- 39 Node testi ve 10 tarayıcı testi geçti; gerçek klavye girdisi ve Tab geçişinde kaydırma/odak ayrıca doğrulandı.
+
+## Tam bina adları ve hesap denetimi — 2026-10-31
+
+- Referans hesaplayıcının İngilizce tam adları tüm hedef listeleri, harita etiketleri, senaryo ekranları, uyarılar ve dışa aktarımlarda kullanıldı; sayısal `#1`–`#4` adlandırması eşitlendi.
+- Eski kısa/Roma rakamlı içe aktarma adları ve kayıtlı atamalar uyumlu kaldı; eski üretilmiş gerekçe başlıkları tam adlara taşınır.
+- Harita etiketleri tam adlarla çok satırlı kartlara dönüştürüldü; mobilde harita kendi alanında kaydırılır.
+- Kaynaktaki 11 binanın üretim/FTC/faz bilgileri doğrulandı; eksik bina bulunmadı. Dev Compound etki açıklaması tamamlandı; aktif özel etkiler simülatörde gösterilir.
+- Çelişen aynı-zamanlı manuel kontrol olaylarının hayali gelir oluşturması engellendi.
+- Faz sınırındaki bonus/toplama olayları yeni faza yazıldı; toplamın Phase I/II dökümü eklendi.
+- Son kesirli dakikadaki kontrol değişimleri maç sonu üretim hızında hesaba katıldı.
+- Genel ele geçirme gecikmesi değişikliği otomatik senaryolara taşındı; farklı özel gecikmeler ve manuel zaman çizelgeleri korunur.
+- Kullanıcının 12 dakikalık varsayılanı korundu; isteğe bağlı 15 dakikalık referans zamanlaması eklendi.
+- 49 Node testi ve 12 tarayıcı testi geçti; kaynak formülüyle karşılaştırma denetimi eklendi.
