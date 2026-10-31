@@ -1,0 +1,43 @@
+# Operating system files
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# Editor-local files
+.idea/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# Local environment variables (keep shareable examples)
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Dependencies, caches and generated output
+node_modules/
+.cache/
+.tmp/
+dist/
+build/
+
+# Logs and test output
+*.log
+coverage/
+test-results/
+playwright-report/
+
+# Private rosters and locally exported strategy backups
+*.xlsx
+*.xls
+*.csv
+*.tsv
+/private-rosters/
+/backups/
+Tiles_Survive_RR_Strategy*.json
+Tiles_Survive_RR_Orders*.txt
+# Only the intentionally artificial workbook belongs in the repository
+!tests/fixtures/synthetic-roster.xlsx

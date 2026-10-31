@@ -1,0 +1,2398 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><meta name="theme-color" content="#10151b"><meta name="description" content="Tiles Survive Reservoir Raid için R4 komuta masası: kadro, takım, faz görevleri ve su puanı planlaması."><title>RR Strategy Commander | Tiles Survive</title><style>
+:root {
+  color-scheme:dark;
+  --bg:#10151b;
+  --panel:#171e26;
+  --panel2:#1d2731;
+  --stroke:#2b3741;
+  --text:#edf1f1;
+  --muted:#9aabb7;
+  --green:#c5eb78;
+  --blue:#93bddc;
+  --amber:#e4bf77;
+  --red:#e997a1;
+  --purple:#b9aedb;
+  --shadow:0 8px 30px #00000012;
+  --radius:14px;
+  --mono:ui-monospace,SFMono-Regular,Consolas,monospace
+}
+* {
+  box-sizing:border-box
+}
+html {
+  scroll-behavior:smooth
+}
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased
+}
+button,input,select,textarea {
+  font:inherit
+}
+button {
+  cursor:pointer
+}
+button:disabled {
+  opacity:.4;
+  cursor:not-allowed
+}
+a {
+  color:var(--blue);
+  text-underline-offset:4px
+}
+button,a,input,select,textarea,summary {
+  -webkit-tap-highlight-color:transparent
+}
+button:focus-visible,a:focus-visible,summary:focus-visible {
+  outline:2px solid var(--green);
+  outline-offset:4px
+}
+input,select,textarea {
+  color:var(--text);
+  background:#11181f;
+  border:1px solid #35434e;
+  border-radius:8px;
+  padding:10px 12px;
+  outline:none;
+  min-height:42px;
+  max-width:100%;
+  transition:border-color .15s,box-shadow .15s
+}
+input:focus,select:focus,textarea:focus {
+  border-color:var(--green);
+  box-shadow:0 0 0 3px #c5eb7812
+}
+select {
+  padding-right:26px
+}
+input[type=checkbox] {
+  accent-color:var(--green);
+  width:16px;
+  height:16px;
+  min-height:16px;
+  flex-shrink:0;
+  box-shadow:none;
+  cursor:pointer
+}
+input[type=number] {
+  min-width:0
+}
+textarea {
+  resize:vertical;
+  min-height:80px
+}
+small,.muted {
+  color:var(--muted)
+}
+h1,h2,h3,h4,p {
+  margin-top:0
+}
+h1,h2,h3 {
+  line-height:1.2
+}
+h1 {
+  font-size:32px;
+  letter-spacing:-1.1px;
+  margin-bottom:9px;
+  font-weight:650
+}
+h2 {
+  font-size:20px;
+  letter-spacing:-.5px;
+  margin-bottom:6px;
+  font-weight:600
+}
+h3 {
+  font-size:16px;
+  font-weight:600;
+  margin-bottom:6px;
+  letter-spacing:-.2px
+}
+h4 {
+  font-size:10px;
+  letter-spacing:1.3px;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin:0 0 10px
+}
+p {
+  margin-bottom:14px
+}
+b,strong {
+  font-weight:600
+}
+.icon {
+  height:18px;
+  width:18px;
+  flex:none;
+  vertical-align:middle
+}
+.app {
+  display:flex;
+  min-height:100vh
+}
+.sidebar {
+  position:fixed;
+  inset:0 auto 0 0;
+  z-index:20;
+  width:236px;
+  display:flex;
+  flex-direction:column;
+  padding:30px 16px 18px;
+  border-right:1px solid var(--stroke);
+  background:#12191f
+}
+.brand {
+  display:flex;
+  align-items:center;
+  gap:11px;
+  text-decoration:none;
+  color:var(--text);
+  margin:0 10px 42px
+}
+.brand-mark {
+  width:38px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  border:1px solid #c5eb7840;
+  border-radius:11px;
+  background:#c5eb780b;
+  color:var(--green)
+}
+.brand-mark .icon {
+  width:23px;
+  height:23px
+}
+.brand-copy strong {
+  display:block;
+  font-size:13px;
+  letter-spacing:1.1px;
+  font-weight:700
+}
+.brand-copy small {
+  display:block;
+  font-size:9px;
+  letter-spacing:2px;
+  margin-top:5px;
+  color:#8a9ba5
+}
+.nav-section-label {
+  padding:0 13px;
+  margin-bottom:12px;
+  color:#798c99;
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:1.8px
+}
+.main-nav {
+  display:flex;
+  flex-direction:column;
+  gap:5px
+}
+.nav-btn {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  position:relative;
+  width:100%;
+  min-height:45px;
+  padding:12px;
+  border:1px solid transparent;
+  border-radius:8px;
+  background:transparent;
+  color:#a9b6c0;
+  text-align:left;
+  font-size:12px;
+  white-space:nowrap
+}
+.nav-btn>.icon {
+  color:#7c929f;
+  width:18px;
+  height:18px
+}
+.nav-btn:hover {
+  background:#1b252d;
+  color:var(--text)
+}
+.nav-btn.active {
+  background:#c5eb7810;
+  color:var(--green);
+  border-color:#c5eb781e
+}
+.nav-btn.active:before {
+  content:"";
+  position:absolute;
+  left:-17px;
+  top:13px;
+  bottom:13px;
+  width:3px;
+  background:var(--green);
+  border-radius:0 2px 2px 0
+}
+.nav-btn.active>.icon {
+  color:var(--green)
+}
+.nav-index {
+  margin-left:auto;
+  font:9px var(--mono);
+  color:#52636f
+}
+.nav-btn.active .nav-index {
+  color:#a3be79
+}
+.sidebar-foot {
+  margin-top:auto;
+  margin-inline:10px;
+  padding-top:20px;
+  color:var(--muted);
+  font-size:11px;
+  border-top:1px solid var(--stroke)
+}
+.sidebar-foot strong {
+  font-size:11px;
+  font-weight:500;
+  color:#c7d1d5
+}
+.sidebar-foot p {
+  font-size:10px;
+  line-height:1.8;
+  margin:10px 0 22px
+}
+.local-dot {
+  display:inline-block;
+  width:6px;
+  height:6px;
+  background:var(--green);
+  border-radius:50%;
+  margin-right:7px;
+  box-shadow:0 0 0 4px #c5eb7808
+}
+.version-label {
+  display:flex;
+  justify-content:space-between;
+  font:9px var(--mono);
+  letter-spacing:1.4px;
+  color:#7b909e
+}
+.main {
+  width:calc(100% - 236px);
+  max-width:1760px;
+  margin-left:236px;
+  padding:34px 38px 64px
+}
+.header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  margin-bottom:32px
+}
+.eyebrow {
+  font:9px var(--mono);
+  font-weight:500;
+  letter-spacing:1.4px;
+  color:#8c9fa9;
+  margin-bottom:16px;
+  display:flex;
+  align-items:center;
+  gap:9px
+}
+.eyebrow-line {
+  width:16px;
+  height:1px;
+  background:var(--green)
+}
+.breadcrumb-slash {
+  color:#4f626c;
+  padding:0 2px
+}
+.page-description {
+  font-size:12px;
+  color:var(--muted);
+  margin:0
+}
+.header-actions,.row,.buttonrow {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap
+}
+.header-actions {
+  flex-shrink:0
+}
+.btn {
+  min-height:40px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:9px 13px;
+  border:1px solid #36424c;
+  background:#202a33;
+  color:#d9e1e4;
+  border-radius:8px;
+  font-size:11px;
+  font-weight:600;
+  white-space:nowrap;
+  transition:background .15s,border-color .15s,transform .15s
+}
+.btn:hover {
+  background:#2a3741;
+  border-color:#576873
+}
+.btn:active {
+  transform:translateY(1px)
+}
+.btn.primary {
+  background:var(--green);
+  color:#1d2a16;
+  border-color:var(--green)
+}
+.btn.primary:hover {
+  background:#d4f699;
+  border-color:#d4f699
+}
+.btn.primary .icon {
+  color:inherit
+}
+.btn.ghost {
+  background:transparent;
+  border-color:var(--stroke);
+  color:#b2c0c9
+}
+.btn.ghost:hover {
+  background:#202b33
+}
+.btn.warn {
+  border-color:#715339;
+  color:#edc58f;
+  background:#382b1c
+}
+.btn.sm {
+  min-height:34px;
+  font-size:10px;
+  padding:7px 10px
+}
+.btn.sm .icon {
+  height:14px;
+  width:14px
+}
+.text-action {
+  display:inline-flex;
+  align-items:center;
+  gap:18px;
+  color:var(--green);
+  background:none;
+  padding:8px 0;
+  border:0;
+  font-size:12px;
+  font-weight:600
+}
+.text-action:hover {
+  gap:23px
+}
+.section {
+  margin-top:22px
+}
+.section-kicker {
+  display:block;
+  color:#8c9fa9;
+  font:9px var(--mono);
+  letter-spacing:1.8px;
+  margin-bottom:9px
+}
+.panel {
+  padding:22px;
+  background:var(--panel);
+  border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  min-width:0
+}
+.panel-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:20px
+}
+.panel-head h2,.panel-head h3 {
+  margin-bottom:0
+}
+.panel-head small {
+  display:block;
+  font-size:11px;
+  line-height:1.8;
+  max-width:660px;
+  margin-top:8px
+}
+.grid {
+  display:grid;
+  gap:16px
+}
+.g2 {
+  grid-template-columns:repeat(2,minmax(0,1fr))
+}
+.g3 {
+  grid-template-columns:repeat(3,minmax(0,1fr))
+}
+.g4 {
+  grid-template-columns:repeat(4,minmax(0,1fr))
+}
+.briefing {
+  display:grid;
+  grid-template-columns:1fr 1.15fr;
+  min-height:254px;
+  overflow:hidden;
+  position:relative;
+  border:1px solid #39483f;
+  border-radius:var(--radius);
+  background:#1b2525
+}
+.briefing-copy {
+  padding:30px 34px;
+  position:relative;
+  z-index:1
+}
+.briefing .section-kicker {
+  color:#a6bf89;
+  font-size:9px;
+  letter-spacing:2px;
+  margin-bottom:15px
+}
+.briefing h2 {
+  font-size:36px;
+  letter-spacing:-1.2px;
+  font-weight:550;
+  line-height:1.12;
+  margin-bottom:16px
+}
+.briefing-copy p {
+  font-size:12px;
+  line-height:1.8;
+  color:#aab9b7;
+  margin:0 0 10px
+}
+.briefing-visual {
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:24px 26px 27px;
+  background-image:linear-gradient(#9dbf9510 1px,transparent 1px),linear-gradient(90deg,#9dbf9510 1px,transparent 1px);
+  background-size:30px 30px;
+  border-left:1px solid #91ac7b16
+}
+.operation-tag {
+  align-self:flex-end;
+  color:#bbceae;
+  font:8px var(--mono);
+  letter-spacing:1.4px;
+  background:#192320bd;
+  border:1px solid #96ab7c26;
+  padding:7px 10px;
+  border-radius:4px;
+  z-index:1
+}
+.operation-tag .local-dot {
+  width:5px;
+  height:5px;
+  box-shadow:none
+}
+.radar-decoration {
+  position:absolute;
+  inset:-110px auto auto 18%;
+  width:350px;
+  height:350px;
+  z-index:-1
+}
+.radar-ring {
+  border:1px solid #b7d39326;
+  border-radius:50%;
+  position:absolute
+}
+.ring-one {
+  inset:0
+}
+.ring-two {
+  inset:52px
+}
+.radar-decoration:before,.radar-decoration:after {
+  content:"";
+  position:absolute;
+  background:#b7d39319
+}
+.radar-decoration:before {
+  width:1px;
+  height:100%;
+  left:50%
+}
+.radar-decoration:after {
+  width:100%;
+  height:1px;
+  top:50%
+}
+.radar-core {
+  position:absolute;
+  inset:137px;
+  display:grid;
+  place-items:center;
+  color:var(--green);
+  background:#b7d3930a;
+  border:1px solid #b7d3932b;
+  border-radius:50%
+}
+.radar-core .icon {
+  width:28px;
+  height:28px
+}
+.radar-point {
+  position:absolute;
+  width:7px;
+  height:7px;
+  background:#b7d393;
+  box-shadow:0 0 0 5px #b7d39310;
+  border:1px solid #dcf7b3;
+  border-radius:50%
+}
+.p-one {
+  left:84px;
+  top:74px
+}
+.p-two {
+  right:20px;
+  top:188px
+}
+.p-three {
+  left:53px;
+  bottom:68px
+}
+.phase-track {
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:83px
+}
+.phase-step {
+  border-top:1px solid #a9c48b45;
+  padding:13px 0 0;
+  display:flex;
+  align-items:flex-start;
+  gap:8px
+}
+.step-index {
+  font:9px var(--mono);
+  color:#a9c48b;
+  line-height:1.4
+}
+.phase-step small {
+  display:block;
+  color:#8da195;
+  font:8px var(--mono);
+  letter-spacing:.8px;
+  margin-bottom:9px;
+  white-space:nowrap
+}
+.phase-step strong {
+  display:block;
+  font:22px var(--mono);
+  font-weight:450;
+  letter-spacing:-1px;
+  color:#e5eede;
+  white-space:nowrap
+}
+.phase-step em {
+  font:10px var(--mono);
+  font-style:normal;
+  color:#9aac9d;
+  letter-spacing:0
+}
+.phase-step div>span {
+  display:block;
+  font-size:10px;
+  color:#94a698;
+  margin-top:8px
+}
+.kpi {
+  position:relative;
+  overflow:hidden;
+  padding:20px 21px;
+  box-shadow:none;
+  border-radius:11px
+}
+.kpi>.label {
+  display:block;
+  margin-bottom:18px
+}
+.kpi-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:18px
+}
+.kpi .label {
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:1px;
+  font-weight:500
+}
+.kpi-icon {
+  color:#80958f
+}
+.kpi-icon .icon {
+  width:17px;
+  height:17px
+}
+.kpi .num {
+  font:30px var(--mono);
+  font-weight:450;
+  letter-spacing:-1.5px;
+  margin:0 0 10px;
+  line-height:1
+}
+.kpi .num .metric-unit {
+  font-size:13px;
+  letter-spacing:0;
+  color:#91a49c;
+  margin-left:4px
+}
+.kpi .sub {
+  color:#83949e;
+  font-size:10px
+}
+.command-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1.65fr) minmax(270px,1fr);
+  gap:20px;
+  align-items:stretch
+}
+.quick-controls {
+  display:grid;
+  gap:16px
+}
+.quick-controls .g2 {
+  gap:12px
+}
+.quick-controls .btn {
+  margin-top:2px;
+  min-height:42px
+}
+.profile-note {
+  border-top:1px solid var(--stroke);
+  padding-top:13px;
+  margin:16px 0 0;
+  font-size:10px!important
+}
+.form-field {
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  font-size:11px;
+  font-weight:500;
+  color:#aebcc5;
+  min-width:0
+}
+.form-field>input,.form-field>select {
+  width:100%
+}
+.settings-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(120px,1fr));
+  gap:18px
+}
+.help {
+  font-size:11px;
+  line-height:1.8;
+  color:var(--muted)
+}
+.pill {
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  border:1px solid #3c4b56;
+  border-radius:5px;
+  background:#ffffff03;
+  color:#aabcc8;
+  padding:4px 7px;
+  font:9px var(--mono);
+  font-weight:500;
+  white-space:nowrap
+}
+.pill.ok {
+  border-color:#8fb96735;
+  background:#c5eb780a;
+  color:#b6d996
+}
+.pill.bad {
+  border-color:#d17d8b38;
+  background:#d17d8b0a;
+  color:#df9aa6
+}
+.pill.warn {
+  border-color:#c49c5438;
+  background:#c49c540b;
+  color:#dfbf83
+}
+.pill.blue {
+  border-color:#84b2cf38;
+  background:#84b2cf0b;
+  color:#a9c8dd
+}
+.pill.killer-pill {
+  border-color:#b9aedb38;
+  color:var(--purple);
+  background:#b9aedb0a
+}
+.alert {
+  margin:8px 0;
+  padding:12px 14px;
+  border:1px solid #ac8a4c38;
+  border-radius:8px;
+  background:#ac8a4c09;
+  color:#d6bd8e;
+  font-size:11px;
+  line-height:1.8
+}
+.alert.danger {
+  border-color:#c577853b;
+  background:#c577850b;
+  color:#e5abb5
+}
+.alert.success {
+  border-color:#a6c67c2e;
+  background:#a6c67c08;
+  color:#bad99d
+}
+.checks-panel .panel-head {
+  margin-bottom:12px
+}
+.check-status {
+  display:flex;
+  gap:11px;
+  align-items:center;
+  font-size:12px;
+  color:#c0d5ae
+}
+.check-status .icon {
+  width:18px;
+  height:18px;
+  color:var(--green)
+}
+.warning-details {
+  margin-top:14px;
+  padding:0;
+  border:0;
+  border-top:1px solid var(--stroke);
+  border-radius:0;
+  background:none
+}
+.warning-details summary {
+  padding:13px 0 0;
+  font-size:11px;
+  color:#c4b18a;
+  font-weight:500;
+  list-style-position:inside
+}
+.warning-details .warning-items {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:0 18px;
+  margin-top:12px
+}
+.warning-item {
+  font-size:11px;
+  color:var(--muted);
+  padding:7px 0;
+  border-bottom:1px solid #ffffff06
+}
+.warning-item:before {
+  content:"•";
+  color:var(--amber);
+  margin-right:7px
+}
+.team-warning-wrap {
+  margin:0 0 18px
+}
+.tablewrap {
+  overflow:auto;
+  border:1px solid var(--stroke);
+  border-radius:9px;
+  max-width:100%;
+  overscroll-behavior-x:contain
+}
+.orders-panel .tablewrap {
+  border:0;
+  border-radius:0
+}
+.tablewrap:focus-visible {
+  outline:2px solid var(--green);
+  outline-offset:3px
+}
+table {
+  border-collapse:collapse;
+  width:100%;
+  font-size:12px;
+  white-space:nowrap
+}
+thead {
+  color:#8297a4;
+  background:#131b22
+}
+th {
+  text-align:left;
+  font-size:9px;
+  letter-spacing:.8px;
+  font-weight:500;
+  padding:13px 12px
+}
+td {
+  padding:12px;
+  border-top:1px solid #ffffff08
+}
+tbody tr:hover {
+  background:#ffffff02
+}
+td input,td select {
+  min-height:35px;
+  padding:7px 8px;
+  font-size:11px;
+  border-radius:6px
+}
+td input {
+  min-width:85px
+}
+td select {
+  min-width:90px
+}
+td input[type=checkbox] {
+  min-width:16px
+}
+.table-right {
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  font-family:var(--mono)
+}
+.orders-panel th {
+  padding-top:4px;
+  background:var(--panel)
+}
+.orders-panel td {
+  padding:13px 10px
+}
+.team-token {
+  display:inline-grid;
+  place-items:center;
+  width:29px;
+  height:29px;
+  border:1px solid #5e74734a;
+  border-radius:6px;
+  color:#d4e0d4;
+  font:11px var(--mono);
+  background:#3646361c
+}
+.target-tag {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:10px;
+  color:#b8c8cf
+}
+.target-tag:before {
+  content:"";
+  width:4px;
+  height:4px;
+  border:1px solid #9bb78a;
+  border-radius:50%
+}
+.target-tag.phase-two:before {
+  border-color:#89a9c7
+}
+.strategy-caption {
+  font-size:10px;
+  color:#8397a3;
+  margin:15px 0 0;
+  line-height:1.7
+}
+.force-grid {
+  display:grid;
+  grid-template-columns:minmax(0,1.65fr) minmax(270px,1fr);
+  gap:20px
+}
+.power-row {
+  display:grid;
+  grid-template-columns:34px 1fr 88px;
+  align-items:center;
+  gap:13px;
+  padding:11px 0
+}
+.power-row+.power-row {
+  border-top:1px solid #ffffff06
+}
+.power-row .progress {
+  margin:7px 0 0;
+  height:4px
+}
+.power-caption {
+  display:flex;
+  justify-content:space-between;
+  color:#8da0ad;
+  font-size:10px
+}
+.power-value {
+  font:12px var(--mono);
+  text-align:right;
+  color:#c6d3d8
+}
+.progress {
+  height:5px;
+  border-radius:3px;
+  overflow:hidden;
+  background:#2b373f;
+  margin:10px 0 14px
+}
+.progress>i {
+  height:100%;
+  display:block;
+  background:var(--green);
+  opacity:.85;
+  border-radius:3px
+}
+.role-mark {
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  font:11px var(--mono);
+  border-radius:6px;
+  flex:none
+}
+.killer-mark {
+  color:var(--purple);
+  background:#b9aedb0e;
+  border:1px solid #b9aedb30
+}
+.holder-mark {
+  color:#aed395;
+  background:#aed3950a;
+  border:1px solid #aed39524
+}
+.support-mark {
+  color:var(--blue);
+  background:#93bddc0a;
+  border:1px solid #93bddc24
+}
+.killer-member {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:15px 0;
+  border-bottom:1px solid #ffffff08
+}
+.killer-member:last-of-type {
+  border-bottom:0
+}
+.killer-member>div:nth-child(2) {
+  flex:1
+}
+.killer-member strong {
+  font-size:13px
+}
+.killer-member small {
+  display:block;
+  margin-top:3px;
+  font-size:10px
+}
+.killer-member>span {
+  font:12px var(--mono);
+  color:#c0ccd4
+}
+.killer-note {
+  margin:16px 0 0;
+  padding-top:15px;
+  border-top:1px solid var(--stroke);
+  color:#96a7b4;
+  font-size:10px;
+  line-height:1.9
+}
+.team-toolbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 15px
+}
+.team-toolbar .help {
+  font-size:10px
+}
+.subnav {
+  display:flex;
+  gap:5px;
+  align-items:center;
+  background:#10171d;
+  padding:5px;
+  border:1px solid var(--stroke);
+  border-radius:8px;
+  width:fit-content;
+  margin:0 0 23px
+}
+.subnav button {
+  background:none;
+  border:1px solid transparent;
+  border-radius:5px;
+  color:var(--muted);
+  padding:9px 14px;
+  font-size:10px;
+  letter-spacing:.2px;
+  white-space:nowrap
+}
+.subnav button.active {
+  background:#29372c;
+  border-color:#5364444d;
+  color:var(--green)
+}
+.team-cards {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px
+}
+.team-card {
+  padding:20px;
+  border:1px solid #36434b;
+  border-radius:11px;
+  background:#131b22;
+  min-width:0
+}
+.team-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:18px
+}
+.team-identity {
+  display:flex;
+  gap:10px;
+  align-items:center
+}
+.team-headline {
+  font:19px var(--mono);
+  letter-spacing:-1px;
+  color:var(--green)
+}
+.team-top small {
+  display:block;
+  color:#8196a3;
+  font-size:9px
+}
+.team-strength {
+  font:24px var(--mono);
+  font-weight:400;
+  letter-spacing:-1px;
+  line-height:1.2
+}
+.team-strength span {
+  font-size:11px;
+  color:#91a3ae;
+  letter-spacing:0
+}
+.team-card .progress {
+  margin:13px 0 19px;
+  height:3px
+}
+.team-member {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:8px 0;
+  border-bottom:1px solid #ffffff06;
+  font-size:12px
+}
+.team-member:last-child {
+  border-bottom:0
+}
+.member-name {
+  min-width:0;
+  overflow-wrap:anywhere;
+  flex:1
+}
+.member-power {
+  font:10px var(--mono);
+  white-space:nowrap;
+  color:#afbec8
+}
+.member-role {
+  font:8px var(--mono);
+  letter-spacing:.3px;
+  padding:3px 5px;
+  border-radius:3px;
+  color:#92a9bc;
+  background:#93bddc09;
+  white-space:nowrap
+}
+.member-role.holder {
+  color:#b5d596;
+  background:#b5d5960b
+}
+.mini-role {
+  font-size:10px;
+  color:#91a4af
+}
+.target-pair {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:19px 0 14px
+}
+.target-pair>label {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  color:#94a8b4;
+  font-size:9px;
+  letter-spacing:.5px
+}
+.target-pair select {
+  width:100%;
+  min-height:38px;
+  padding:8px;
+  font-size:10px;
+  border-color:#405244
+}
+.target-pair>label:nth-child(2) select {
+  border-color:#334553
+}
+.lock-label {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:9px;
+  letter-spacing:0;
+  color:#8d9fac;
+  line-height:1.5
+}
+.lock-label input {
+  width:13px;
+  height:13px;
+  min-height:13px
+}
+.team-card .form-field {
+  margin:15px 0 0;
+  font-size:10px
+}
+.team-card .form-field select {
+  font-size:11px;
+  min-height:37px
+}
+.leader-note {
+  color:#8095a3;
+  font-size:9px;
+  margin-top:5px
+}
+.rotations {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:5px;
+  font-size:10px;
+  margin-top:15px
+}
+.rotations .pill {
+  font-size:8px;
+  padding:4px 6px
+}
+.rotation-note {
+  color:#849aa6;
+  font-size:10px;
+  line-height:1.8;
+  margin:12px 0 0
+}
+.team-card details {
+  margin-top:15px;
+  background:#18232a;
+  padding:12px 10px
+}
+.team-card details summary {
+  font-size:10px
+}
+.team-card details p {
+  font-size:11px;
+  line-height:1.8;
+  margin-top:12px
+}
+.team-card details p:last-child {
+  margin-bottom:0
+}
+.two-columns {
+  display:grid;
+  grid-template-columns:1.5fr 1fr;
+  gap:20px
+}
+.scene-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px
+}
+.site-tile {
+  padding:15px;
+  border-radius:9px;
+  border:1px solid var(--stroke);
+  background:#131c23;
+  min-width:0
+}
+.site-tile b {
+  display:block;
+  font:11px var(--mono);
+  margin-bottom:11px
+}
+.site-tile small {
+  font-size:10px
+}
+.site-tile select {
+  width:100%;
+  font-size:11px
+}
+.site-tile .lock-label {
+  margin-top:12px
+}
+.site-tile.high {
+  border-color:#59744a
+}
+.site-tile.open2 {
+  border-color:#7a6748
+}
+.map {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:460px;
+  background:#101c22;
+  border:1px solid #34454b;
+  border-radius:9px
+}
+.map-node {
+  cursor:pointer
+}
+.map-node circle {
+  fill:#19272d;
+  stroke:#536d77;
+  stroke-width:1.5
+}
+.map-node.ally circle {
+  fill:#2c3e2c;
+  stroke:#b0ce82
+}
+.map-node.enemy circle {
+  fill:#442c35;
+  stroke:#df9ca8
+}
+.map-node text {
+  fill:#e1e9e7;
+  text-anchor:middle;
+  pointer-events:none;
+  font:600 11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+.map-node .sub {
+  font-size:9px;
+  fill:#a4b8c1;
+  font-weight:400
+}
+.map-node:hover circle {
+  stroke-width:3
+}
+.sparkbox {
+  min-height:230px
+}
+.sparkbox svg {
+  width:100%;
+  height:245px;
+  display:block
+}
+.chart-label {
+  fill:#93a8b6;
+  font:10px var(--mono)
+}
+.legend {
+  display:flex;
+  gap:20px;
+  align-items:center;
+  flex-wrap:wrap;
+  color:#98aab4;
+  font-size:10px
+}
+.legend i {
+  display:inline-block;
+  width:12px;
+  height:2px;
+  vertical-align:middle;
+  margin-right:6px
+}
+.sim-row {
+  display:grid;
+  grid-template-columns:1.35fr .75fr .75fr .65fr 1fr;
+  gap:12px;
+  align-items:center;
+  padding:12px 0;
+  border-bottom:1px solid #ffffff08;
+  font-size:11px
+}
+.sim-row:last-child {
+  border-bottom:0
+}
+.sim-row select,.sim-row input {
+  width:100%;
+  font-size:10px;
+  padding:8px;
+  min-height:36px
+}
+.sim-row small {
+  display:block;
+  color:#8199a7;
+  font-size:9px;
+  margin-top:3px
+}
+.sim-row.head {
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  color:#8a9da9;
+  font-weight:500
+}
+.scenario-card {
+  border:1px solid var(--stroke);
+  border-radius:11px;
+  padding:22px;
+  background:#141d25;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:16px;
+  align-content:start;
+  align-items:start;
+  min-width:0
+}
+.scenario-card.active {
+  border-color:#9abf6866;
+  background:#1b261f
+}
+.scenario-card .help {
+  margin-top:7px;
+  font-size:11px
+}
+.scenario-card .big {
+  font:24px var(--mono);
+  letter-spacing:-1px;
+  text-align:right;
+  line-height:1.2;
+  color:#d7e6c3
+}
+.scenario-card .scenario-score {
+  grid-column:1/-1;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  font-size:10px;
+  color:#a3b4bf;
+  padding-top:12px;
+  border-top:1px solid #ffffff09
+}
+.scenario-score>span {
+  padding-right:8px;
+  border-right:1px solid #35424a
+}
+.scenario-score>span:last-child {
+  border:0
+}
+.scenario-card details {
+  grid-column:1/-1;
+  background:transparent
+}
+.scenario-card .btn {
+  grid-column:1/-1;
+  align-self:end
+}
+.scenario-card details>p {
+  font-size:11px
+}
+.spaced {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap
+}
+.source-note {
+  border-left:2px solid #758b69;
+  padding:14px 16px;
+  border-radius:0 6px 6px 0;
+  background:#8fba5f06;
+  color:#98aeb9;
+  font-size:10px;
+  line-height:1.9
+}
+.file-drop {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+  border:1px dashed #52675d;
+  border-radius:10px;
+  background:#a6ca7810;
+  padding:19px
+}
+.file-drop strong {
+  font-size:13px
+}
+.file-drop .help {
+  font-size:10px
+}
+.replacement-bar {
+  padding:16px;
+  border:1px solid var(--stroke);
+  border-radius:9px;
+  align-items:flex-end;
+  gap:14px;
+  background:#121b22
+}
+.replacement-bar .form-field {
+  flex:1;
+  min-width:150px
+}
+.replacement-bar .btn {
+  min-height:42px
+}
+.note-strong {
+  color:#d4e1e6;
+  font-weight:600
+}
+.hr {
+  border:0;
+  border-top:1px solid var(--stroke);
+  margin:20px 0
+}
+.inline-list {
+  display:flex;
+  gap:12px 18px;
+  flex-wrap:wrap
+}
+.inline-list .lock-label {
+  font-size:11px
+}
+.danger-text {
+  color:var(--red)
+}
+.good-text {
+  color:var(--green)
+}
+.horizontal-bar {
+  display:flex;
+  height:10px;
+  border-radius:3px;
+  overflow:hidden;
+  background:#25343b
+}
+.horizontal-bar i {
+  height:100%
+}
+.ribbon {
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap
+}
+.ribbon>div {
+  flex:1;
+  text-align:center;
+  min-width:65px;
+  padding:9px 2px;
+  border:1px solid var(--stroke);
+  background:#1a252e;
+  border-radius:6px;
+  font-size:12px
+}
+.ribbon strong {
+  display:block
+}
+.empty {
+  padding:30px 12px;
+  text-align:center;
+  color:var(--muted)
+}
+.toast {
+  position:fixed;
+  bottom:22px;
+  right:24px;
+  max-width:min(460px,calc(100vw - 32px));
+  z-index:100;
+  background:#283e2e;
+  border:1px solid #a4c47866;
+  padding:14px 18px;
+  color:#edf4e8;
+  border-radius:9px;
+  box-shadow:0 8px 32px #0005;
+  font-size:12px;
+  white-space:pre-line;
+  line-height:1.7
+}
+.hidden,[hidden] {
+  display:none!important
+}
+details {
+  background:#121c24;
+  border:1px solid var(--stroke);
+  border-radius:8px;
+  padding:14px
+}
+summary {
+  cursor:pointer;
+  font-size:12px;
+  color:#c3d1d8;
+  font-weight:500
+}
+details[open]>summary {
+  margin-bottom:12px
+}
+code {
+  font-family:var(--mono);
+  color:#b8d3ab;
+  font-size:.95em
+}
+.small-input {
+  width:80px!important
+}
+#importPreview {
+  border-color:#8ca86a77;
+  margin-bottom:24px
+}
+#importRows {
+  max-height:300px;
+  overflow:auto
+}
+#importSummary {
+  font-size:12px;
+  line-height:1.8
+}
+#rosterTable {
+  margin-top:20px
+}
+#rosterTable thead {
+  position:sticky;
+  top:0;
+  z-index:2
+}
+#rosterTable .tablewrap {
+  max-height:70vh
+}
+#rosterTable th:nth-child(2),#rosterTable td:nth-child(2) {
+  position:sticky;
+  left:0;
+  z-index:1;
+  background:#171f27
+}
+#rosterTable th:nth-child(2) {
+  z-index:3;
+  background:#131b22
+}
+.skip-link {
+  position:fixed;
+  top:-80px;
+  left:20px;
+  z-index:100;
+  background:var(--green);
+  color:#162112;
+  padding:10px;
+  border-radius:5px
+}
+.skip-link:focus {
+  top:10px
+}
+.mobile-menu {
+  display:none
+}
+#battleAdvice .panel {
+  background:#121c23;
+  box-shadow:none
+}
+.mode-row {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap
+}
+.mode-btn {
+  flex:1;
+  text-align:left;
+  background:#17232b;
+  border:1px solid var(--stroke);
+  border-radius:9px;
+  color:var(--text);
+  padding:14px;
+  min-width:150px
+}
+.mode-btn.active {
+  border-color:var(--green)
+}
+.mode-btn strong {
+  display:block
+}
+.mode-btn small {
+  font-size:11px
+}
+@media(min-width:1800px) {
+  .main {
+    margin-right:auto;
+    margin-left:max(236px,calc((100vw - 1524px)/2))
+  }
+}
+@media(max-width:1400px) {
+  .main {
+    padding:30px
+  }
+  .header {
+    align-items:flex-start
+  }
+  .header-actions {
+    max-width:360px;
+    justify-content:flex-end
+  }
+  .header-actions .btn {
+    font-size:10px;
+    padding:9px 11px
+  }
+  .team-cards {
+    grid-template-columns:repeat(2,minmax(0,1fr))
+  }
+  .briefing h2 {
+    font-size:32px
+  }
+  .phase-step strong {
+    font-size:19px
+  }
+  .briefing-copy {
+    padding:27px
+  }
+  .briefing-visual {
+    padding:23px
+  }
+  .settings-grid {
+    grid-template-columns:repeat(3,minmax(120px,1fr))
+  }
+}
+@media(max-width:1150px) {
+  .sidebar {
+    width:204px;
+    padding-inline:12px
+  }
+  .brand {
+    margin-inline:5px
+  }
+  .brand-copy strong {
+    font-size:11px
+  }
+  .nav-btn {
+    gap:9px;
+    font-size:11px;
+    padding:11px 9px
+  }
+  .nav-index {
+    display:none
+  }
+  .nav-btn.active:before {
+    left:-13px
+  }
+  .main {
+    margin-left:204px;
+    width:calc(100% - 204px);
+    padding:27px
+  }
+  .header {
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:25px
+  }
+  .header-actions {
+    max-width:none;
+    justify-content:flex-start
+  }
+  .briefing {
+    grid-template-columns:1fr 1.25fr
+  }
+  .briefing h2 {
+    font-size:30px
+  }
+  .briefing-copy {
+    padding:24px
+  }
+  .briefing-visual {
+    padding:22px 17px
+  }
+  .phase-track {
+    gap:7px
+  }
+  .step-index {
+    display:none
+  }
+  .phase-step strong {
+    font-size:18px
+  }
+  .phase-step small {
+    font-size:7px
+  }
+  .g4 {
+    grid-template-columns:repeat(2,minmax(0,1fr))
+  }
+  .command-grid,.force-grid {
+    grid-template-columns:minmax(0,1.3fr) minmax(240px,1fr);
+    gap:16px
+  }
+  .two-columns {
+    grid-template-columns:1fr
+  }
+  .scene-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr))
+  }
+  .panel {
+    padding:19px
+  }
+  .kpi {
+    padding:18px
+  }
+  .kpi .num {
+    font-size:29px
+  }
+  .kpi-top {
+    margin-bottom:15px
+  }
+  .scenario-card .big {
+    font-size:21px
+  }
+  .scenario-card {
+    padding:18px;
+    grid-template-columns:1fr
+  }
+  .scenario-card .big {
+    text-align:left
+  }
+  .settings-grid {
+    grid-template-columns:repeat(2,minmax(120px,1fr))
+  }
+}
+@media(max-width:900px) {
+  .sidebar {
+    width:68px;
+    padding:22px 8px
+  }
+  .brand {
+    justify-content:center;
+    margin:0 0 28px
+  }
+  .brand-copy,.nav-section-label,.nav-label,.sidebar-foot {
+    display:none
+  }
+  .nav-btn {
+    justify-content:center;
+    padding:13px;
+    min-height:45px
+  }
+  .nav-btn.active:before {
+    left:-9px
+  }
+  .main {
+    margin-left:68px;
+    width:calc(100% - 68px);
+    padding:25px
+  }
+  .main-nav {
+    gap:8px
+  }
+  .command-grid,.force-grid {
+    grid-template-columns:1fr 1fr
+  }
+  .briefing h2 {
+    font-size:31px
+  }
+  .team-card {
+    padding:17px
+  }
+  .team-card .team-member {
+    gap:6px
+  }
+  .member-role {
+    font-size:7px
+  }
+  .briefing-visual {
+    min-height:250px
+  }
+  .profile-panel .panel-head {
+    align-items:flex-start
+  }
+  .profile-panel .pill {
+    font-size:8px
+  }
+  .briefing-copy {
+    padding:26px
+  }
+}
+@media(max-width:760px) {
+  .assignments-head {
+    flex-direction:column
+  }
+  .assignments-head .buttonrow {
+    width:100%;
+    margin-top:2px
+  }
+  .assignments-head .buttonrow .btn {
+    flex:1
+  }
+  .panel-head:has(>div>small) {
+    flex-wrap:wrap
+  }
+  .panel-head:has(>div>small)>div:first-child {
+    flex-basis:100%
+  }
+  .app {
+    display:block
+  }
+  .sidebar {
+    position:sticky;
+    inset:0 0 auto;
+    width:100%;
+    height:auto;
+    padding:13px 16px 0;
+    background:#12191ff7;
+    border-right:0;
+    border-bottom:1px solid var(--stroke);
+    backdrop-filter:blur(12px);
+    display:block
+  }
+  .brand {
+    justify-content:flex-start;
+    gap:8px;
+    margin:0 0 12px;
+    width:fit-content
+  }
+  .brand-mark {
+    height:30px;
+    width:28px;
+    border-radius:7px
+  }
+  .brand-mark .icon {
+    height:18px;
+    width:18px
+  }
+  .brand-copy {
+    display:block
+  }
+  .brand-copy strong {
+    font-size:10px;
+    letter-spacing:1.4px
+  }
+  .brand-copy small {
+    font-size:7px;
+    letter-spacing:1.7px;
+    margin-top:2px
+  }
+  .main-nav {
+    flex-direction:row;
+    gap:4px;
+    overflow:auto;
+    scrollbar-width:none;
+    margin-inline:-16px;
+    padding:0 12px 10px
+  }
+  .main-nav::-webkit-scrollbar {
+    display:none
+  }
+  .nav-btn {
+    width:auto;
+    flex:none;
+    padding:8px 10px;
+    min-height:36px;
+    gap:7px;
+    border-radius:5px;
+    font-size:10px
+  }
+  .nav-btn .nav-label {
+    display:block
+  }
+  .nav-btn .icon {
+    width:14px;
+    height:14px
+  }
+  .nav-btn.active:before {
+    display:none
+  }
+  .main {
+    margin:0;
+    width:100%;
+    padding:23px 18px 45px
+  }
+  .header {
+    gap:18px;
+    margin-bottom:22px;
+    display:block
+  }
+  .eyebrow {
+    font-size:8px;
+    letter-spacing:1px;
+    margin-bottom:12px
+  }
+  h1 {
+    font-size:28px;
+    margin-bottom:7px
+  }
+  .page-description {
+    font-size:11px
+  }
+  .header-actions {
+    margin-top:20px;
+    display:grid;
+    grid-template-columns:auto auto 1fr;
+    gap:7px
+  }
+  .header-actions .btn {
+    font-size:10px;
+    min-height:39px;
+    padding:9px
+  }
+  .header-actions .icon {
+    height:15px;
+    width:15px
+  }
+  .briefing {
+    grid-template-columns:1fr;
+    min-height:0
+  }
+  .briefing-copy {
+    padding:24px
+  }
+  .briefing h2 {
+    font-size:34px
+  }
+  .briefing-copy p {
+    font-size:11px;
+    margin-bottom:8px
+  }
+  .briefing-visual {
+    min-height:144px;
+    padding:18px 24px;
+    border-left:0;
+    border-top:1px solid #a6c67c20
+  }
+  .operation-tag {
+    position:absolute;
+    top:14px;
+    right:18px;
+    font-size:7px;
+    padding:5px 7px
+  }
+  .phase-track {
+    margin-top:17px;
+    padding-top:10px;
+    gap:16px
+  }
+  .phase-step {
+    padding-top:13px
+  }
+  .phase-step small {
+    font-size:7px
+  }
+  .phase-step strong {
+    font-size:20px
+  }
+  .phase-step div>span {
+    font-size:9px;
+    margin-top:6px
+  }
+  .radar-decoration {
+    inset:-185px auto auto 55%;
+    opacity:.55
+  }
+  .section {
+    margin-top:17px
+  }
+  .command-grid,.force-grid {
+    grid-template-columns:1fr;
+    gap:17px
+  }
+  .quick-controls {
+    grid-template-columns:1fr 1fr;
+    gap:14px
+  }
+  .quick-controls>label {
+    grid-column:1/-1
+  }
+  .quick-controls>.g2 {
+    grid-column:1/-1
+  }
+  .quick-controls>.btn {
+    grid-column:1/-1
+  }
+  .panel {
+    padding:18px;
+    border-radius:11px
+  }
+  .panel-head {
+    gap:10px;
+    margin-bottom:18px;
+    align-items:flex-start
+  }
+  .panel-head h2 {
+    font-size:19px
+  }
+  .panel-head small {
+    font-size:10px
+  }
+  .kpi {
+    padding:17px 15px
+  }
+  .kpi .num {
+    font-size:26px;
+    letter-spacing:-1px
+  }
+  .kpi .label {
+    font-size:8px;
+    letter-spacing:.6px
+  }
+  .kpi .sub {
+    font-size:9px
+  }
+  .kpi-top {
+    margin-bottom:15px
+  }
+  .kpi .num .metric-unit {
+    font-size:11px
+  }
+  .kpi-icon .icon {
+    height:14px;
+    width:14px
+  }
+  .grid {
+    gap:12px
+  }
+  .team-cards {
+    grid-template-columns:1fr
+  }
+  .team-card {
+    padding:20px
+  }
+  .team-card .member-role {
+    font-size:8px
+  }
+  .team-card .member-power {
+    font-size:11px
+  }
+  .team-top {
+    margin-bottom:15px
+  }
+  .team-card .target-pair {
+    margin-top:16px
+  }
+  .team-toolbar .help {
+    max-width:200px;
+    line-height:1.8
+  }
+  .team-toolbar .btn {
+    white-space:normal;
+    text-align:right;
+    border:0;
+    padding-inline:0
+  }
+  .settings-grid {
+    gap:15px 12px
+  }
+  .form-field {
+    font-size:10px
+  }
+  .warning-details .warning-items {
+    grid-template-columns:1fr
+  }
+  .scene-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px
+  }
+  .site-tile {
+    padding:12px
+  }
+  .sim-row {
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    padding:16px 0
+  }
+  .sim-row.head {
+    display:none
+  }
+  .sim-row>div:first-child {
+    grid-column:1/-1
+  }
+  .sim-row>:last-child {
+    grid-column:1/-1
+  }
+  .sim-row input,.sim-row select {
+    font-size:11px;
+    min-height:40px
+  }
+  .sim-row small {
+    display:inline;
+    margin-left:8px
+  }
+  .scenario-card {
+    grid-template-columns:1fr auto;
+    gap:14px
+  }
+  .scenario-card .big {
+    font-size:22px;
+    text-align:right
+  }
+  .g2#compareCards {
+    grid-template-columns:1fr
+  }
+  .file-drop .buttonrow {
+    width:100%
+  }
+  .file-drop .buttonrow .btn {
+    flex:1
+  }
+  .file-drop .help {
+    font-size:10px
+  }
+  .replacement-bar {
+    padding:13px;
+    gap:12px
+  }
+  .replacement-bar .form-field {
+    min-width:calc(50% - 12px)
+  }
+  .replacement-bar .btn {
+    width:100%;
+    font-size:10px
+  }
+  .power-row {
+    grid-template-columns:31px 1fr 80px;
+    gap:10px
+  }
+  .force-grid .panel-head>.pill {
+    font-size:8px
+  }
+  .subnav {
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr
+  }
+  .subnav button {
+    padding:9px 5px;
+    font-size:9px
+  }
+  .team-toolbar {
+    margin-bottom:14px
+  }
+  .two-columns {
+    gap:17px
+  }
+  .toast {
+    right:16px;
+    bottom:16px
+  }
+  .source-note {
+    font-size:10px
+  }
+  #battleAdvice .g2 {
+    grid-template-columns:1fr
+  }
+  .panel-head .buttonrow {
+    gap:5px
+  }
+  .panel-head>.btn {
+    white-space:normal
+  }
+  .legend {
+    gap:10px;
+    font-size:9px
+  }
+  .legend span {
+    white-space:nowrap
+  }
+}
+@media(max-width:380px) {
+  .main {
+    padding-inline:12px
+  }
+  .header-actions .btn {
+    font-size:9px;
+    padding:9px 6px
+  }
+  .header-actions .icon {
+    width:13px;
+    height:13px
+  }
+  .briefing-copy {
+    padding:22px
+  }
+  .briefing h2 {
+    font-size:30px
+  }
+  .briefing-visual {
+    padding-inline:20px
+  }
+  .phase-track {
+    gap:10px
+  }
+  .phase-step strong {
+    font-size:18px
+  }
+  .kpi .num {
+    font-size:23px
+  }
+  .kpi {
+    padding:15px 12px
+  }
+  .kpi .sub {
+    font-size:8px
+  }
+  .scenario-card {
+    grid-template-columns:1fr
+  }
+  .scenario-card .big {
+    text-align:left
+  }
+  .settings-grid {
+    grid-template-columns:1fr
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  html {
+    scroll-behavior:auto
+  }
+  *,*:before,*:after {
+    transition:none!important;
+    animation:none!important
+  }
+}
+@media print {
+  body {
+    background:white;
+    color:black;
+    font-size:11px
+  }
+  .sidebar,.header-actions,.team-toolbar,.buttonrow,.toast,.subnav,.briefing,.skip-link,#importPreview {
+    display:none!important
+  }
+  .main {
+    margin:0;
+    padding:0;
+    width:100%;
+    max-width:none
+  }
+  .header {
+    margin-bottom:16px
+  }
+  .eyebrow,.page-description {
+    color:#444
+  }
+  .panel,.team-card {
+    background:white;
+    color:black;
+    box-shadow:none;
+    border-color:#aaa
+  }
+  .panel {
+    padding:12px
+  }
+  .team-cards {
+    grid-template-columns:1fr 1fr;
+    gap:12px
+  }
+  .team-card {
+    break-inside:avoid;
+    padding:12px
+  }
+  .team-headline,.team-strength,.help,.member-name,.member-power,.mini-role,.leader-note {
+    color:black
+  }
+  .pill,.member-role {
+    color:#333;
+    background:white;
+    border-color:#999
+  }
+  input,select {
+    color:black;
+    background:white;
+    border-color:#aaa
+  }
+  .team-card details {
+    background:white;
+    border-color:#aaa
+  }
+  .team-card details>* {
+    display:block
+  }
+  .team-card details summary {
+    display:none
+  }
+  .rotation-note {
+    color:#444
+  }
+  .pageview[hidden] {
+    display:none!important
+  }
+  .team-member {
+    border-color:#ddd
+  }
+  .progress {
+    background:#ddd
+  }
+  .progress>i {
+    background:#555
+  }
+  .warning-details {
+    display:none
+  }
+  .section-kicker {
+    color:#555
+  }
+  .target-pair>label,.lock-label,.team-top small {
+    color:#333
+  }
+}
+</style></head>
+<body><div class="app"><aside class="sidebar"><a class="brand" href="./index.html" aria-label="RR Commander ana sayfa"><span class="brand-mark"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3C9 7 5 11 5 15a7 7 0 0 0 14 0c0-4-4-8-7-12z M8 15a4 4 0 0 0 4 4"/></svg></span><span class="brand-copy"><strong>RR COMMANDER</strong><small>TILES SURVIVE!</small></span></a><div class="nav-section-label">KOMUTA ALANI</div><nav class="main-nav" aria-label="Ana gezinme"><button class="nav-btn active" data-tab="dashboard" aria-current="page" aria-label="Komuta Merkezi"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z"/></svg><span class="nav-label">Komuta Merkezi</span><span class="nav-index">01</span></button><button class="nav-btn" data-tab="roster" aria-label="Oyuncu Kadrosu"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M20 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">Oyuncu Kadrosu</span><span class="nav-index">02</span></button><button class="nav-btn" data-tab="teams" aria-label="Takım ve Fazlar"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V3 M4 4c5-4 10 4 16 0v10c-6 4-11-4-16 0"/></svg><span class="nav-label">Takım ve Fazlar</span><span class="nav-index">03</span></button><button class="nav-btn" data-tab="battlefield" aria-label="Hedef Haritası"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z M9 3v15 M15 6v15"/></svg><span class="nav-label">Hedef Haritası</span><span class="nav-index">04</span></button><button class="nav-btn" data-tab="simulator" aria-label="Su Hesaplayıcı"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3C9 7 5 11 5 15a7 7 0 0 0 14 0c0-4-4-8-7-12z M8 15a4 4 0 0 0 4 4"/></svg><span class="nav-label">Su Hesaplayıcı</span><span class="nav-index">05</span></button><button class="nav-btn" data-tab="compare" aria-label="Strateji Karşılaştır"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10 M10 20V4 M16 20v-8 M22 20H2"/></svg><span class="nav-label">Strateji Karşılaştır</span><span class="nav-index">06</span></button><button class="nav-btn" data-tab="battle" aria-label="Battle Control"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4l3 2 M21 12a9 9 0 1 1-3-6.7 M21 3v6h-6"/></svg><span class="nav-label">Battle Control</span><span class="nav-index">07</span></button><button class="nav-btn" data-tab="settings" aria-label="Ayarlar ve Kaynaklar"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8"/></svg><span class="nav-label">Ayarlar ve Kaynaklar</span><span class="nav-index">08</span></button></nav><div class="sidebar-foot"><span class="local-dot"></span><strong>Planınız bu cihazda</strong><p>JSON yedeğiyle planınızı başka bir tarayıcıya taşıyabilirsiniz.</p><span class="version-label">R4 DESK <span>v2.1</span></span></div></aside><main class="main">
+<a class="skip-link" href="#pageTitle">İçeriğe geç</a><header class="header"><div class="page-heading"><div class="eyebrow"><span class="eyebrow-line"></span>RESERVOIR RAID <span class="breadcrumb-slash">/</span> R4 OPERASYON MASASI</div><h1 id="pageTitle" tabindex="-1">Komuta Merkezi</h1><p class="page-description" id="pageDesc">Kadro, hedefler ve faz görevleri. Tek bir operasyon planı.</p></div><div class="header-actions"><button class="btn ghost" id="saveBtn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h12l4 4v14H3V3z M7 3v6h10V3 M7 21v-8h10v8"/></svg><span>Kaydet</span></button><button class="btn" id="jsonBtn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5"/></svg><span>JSON yedeği</span></button><button class="btn primary" id="generateBtn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7z"/></svg><span>Planı optimize et</span></button></div></header><section id="view-dashboard" class="pageview"><div id="noticeTop"></div>
+<div class="briefing"><div class="briefing-copy"><span class="section-kicker">OPERASYON BRİFİNGİ</span><h2>Her takımın<br>görevi net olsun.</h2><p>Kadroyu dengele. Kritik hedefleri koru.<br>Faz geçişini güvenle yönet.</p><button class="text-action" data-jumptab="teams">Takım planına git <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14 M13 6l6 6-6 6"/></svg></button></div><div class="briefing-visual"><div class="radar-decoration" aria-hidden="true"><div class="radar-ring ring-one"></div><div class="radar-ring ring-two"></div><div class="radar-core"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3C9 7 5 11 5 15a7 7 0 0 0 14 0c0-4-4-8-7-12z M8 15a4 4 0 0 0 4 4"/></svg></div><span class="radar-point p-one"></span><span class="radar-point p-two"></span><span class="radar-point p-three"></span></div><div class="operation-tag"><span class="local-dot"></span>HAZIRLIK PLANI</div><div class="phase-track"><div class="phase-step"><span class="step-index">01</span><div><small>İLK YERLEŞİM</small><strong id="briefPhase1">00–12 <em>dk</em></strong><span>Phase I</span></div></div><div class="phase-step"><span class="step-index">02</span><div><small>ANA OPERASYON</small><strong id="briefPhase2">12–60 <em>dk</em></strong><span>Phase II</span></div></div><div class="phase-step"><span class="step-index">03</span><div><small>TANK TOPLAMA</small><strong id="briefWater">20+ <em>dk</em></strong><span>Ayrı toplama olayı</span></div></div></div></div></div>
+<div class="grid g4 section" id="dashboardKpis"></div>
+<div class="command-grid section"><div class="panel orders-panel"><div class="panel-head"><div><span class="section-kicker">GÖREV DAĞILIMI</span><h2>İki faz. Tek plan.</h2></div><button class="btn sm ghost" data-jumptab="teams">Takımları aç <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14 M13 6l6 6-6 6"/></svg></button></div><div id="dashboardOrders"></div></div>
+<div class="panel profile-panel"><div class="panel-head"><div><span class="section-kicker">PLAN AYARLARI</span><h2>Operasyon profili</h2></div><span class="pill blue">P2 · <b id="phaseBadge">12</b> dk</span></div><div class="quick-controls"><label class="form-field">Strateji<select id="quickMode"></select></label><div class="grid g2"><label class="form-field">Takım sayısı<select id="quickTeams"></select></label><label class="form-field">Bağımsız Killer<select id="quickKillers"></select></label></div><button class="btn primary" id="quickGenerate"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7z"/></svg>Takımları yeniden kur</button></div><p class="help profile-note">Manuel rol, takım ve hedef kilitleriniz korunur.</p></div></div>
+<div class="panel checks-panel section"><div class="panel-head"><div><span class="section-kicker">SAHAYA ÇIKMADAN ÖNCE</span><h3>Plan kontrolü</h3></div><span class="pill" id="warningCount"></span></div><div id="dashboardChecks"></div></div>
+<div class="section force-grid"><div class="panel"><div class="panel-head"><div><span class="section-kicker">KUVVET DAĞILIMI</span><h2>Takım dengesi</h2></div><span class="pill" id="teamCountText"></span></div><div id="powerSummary"></div></div><div class="panel killer-panel"><div class="panel-head"><div><span class="section-kicker">SERBEST OPERASYON</span><h2>Bağımsız Killer</h2></div><span class="role-mark killer-mark">K</span></div><div id="killerSummary"></div></div></div>
+</section>
+<section class="panel section" id="importPreview" hidden><h2>İçe aktarma önizlemesi</h2><p id="importSummary"></p><div id="importRows"></div><div class="buttonrow section"><button class="btn primary" id="confirmImport">Önizlemeyi onayla ve yükle</button><button class="btn" id="cancelImport">Vazgeç</button></div></section>
+<section id="view-roster" class="pageview" hidden><div class="panel"><div class="panel-head"><div><h2>Oyuncu kadrosu</h2><small>Manuel düzenle, CSV/XLSX aktar. Excel'deki takım ve görev sütunları tercih olarak okunur; optimize et komutu yeni dağılım oluşturur.</small></div><div class="buttonrow"><button class="btn sm" id="addPlayer">+ Oyuncu</button><button class="btn sm" id="csvExport"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5"/></svg><span>CSV dışa aktar</span></button></div></div>
+<div class="file-drop"><div><strong>Kendi kadronu içe aktar</strong><br><span class="help">.xlsx, .csv, .tsv veya .json · dosyanız bu tarayıcıda işlenir, sunucuya yüklenmez</span></div><div class="buttonrow"><button class="btn" id="importBtn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M20 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Dosya seç</span></button><input type="file" id="fileInput" accept=".xlsx,.csv,.tsv,.json" hidden></div></div><div style="height:13px"></div><div class="row"><label class="form-field" style="min-width:190px">Oyuncu ara<input id="rosterSearch" placeholder="İsim yaz..." autocomplete="off"></label><label class="form-field">Durum filtrele<select id="rosterFilter"><option value="all">Tümü</option><option value="main">Asil</option><option value="reserve">Yedek</option><option value="pool">Havuz</option></select></label><span class="pill" id="rosterCount"></span></div><div style="height:14px"></div><div class="row section replacement-bar"><label class="form-field">Çıkan asil<select id="replaceOut"></select></label><label class="form-field">Giren yedek<select id="replaceIn"></select></label><button class="btn" id="replaceBtn">Görevleri yedeğe devret</button></div><p class="help">Yedek değişimi rol ve takım görevlerini devreder. Doğrudan rol/takım düzenlemelerindeki eksikler plan uyarılarında gösterilir.</p><div id="rosterTable"></div></div></section>
+<section id="view-teams" class="pageview" hidden><div class="team-toolbar"><span class="help">Manuel hedef değişiklikleri otomatik kilitlenir.</span><button class="btn sm ghost" id="resetLocks">Tüm kilitleri kaldır</button></div><div id="teamWarnings"></div><div class="panel"><div class="panel-head assignments-head"><div><span class="section-kicker">TAKIM OPERASYONLARI</span><h2>Görevler ve atamalar</h2><small>Killer oyuncular hiçbir takıma atanmaz. Takımlarda en az iki Holder bulunur; diğerleri Support görevindedir.</small></div><div class="buttonrow"><button class="btn" id="ordersExport"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5"/></svg><span>Emirleri indir</span></button><button class="btn ghost" id="printBtn">Yazdır</button></div></div><div class="subnav"><button class="active" data-phase="1">PHASE I · 00–<span class="phaseText">12</span> dk</button><button data-phase="2">PHASE II · <span class="phaseText">12</span>–<span class="durationText">60</span> dk</button></div><div id="teamCards" class="team-cards"></div></div>
+<div class="panel section"><div class="panel-head"><h3>Bağımsız Killer operasyonları</h3><span class="pill killer-pill">BAĞIMSIZ HAREKET</span></div><div id="killersDetail"></div></div></section>
+<section id="view-battlefield" class="pageview" hidden><div class="two-columns"><div class="panel"><div class="panel-head"><div><h2>Saha kontrol şeması</h2><small>Gerçek oyun haritasının birebir kopyası veya mesafe hesabı değildir.</small></div><select id="mapPhase"><option value="1">Phase I</option><option value="2">Phase II</option></select></div><div id="mapSvg"></div><div class="help">Bina simgesine tıklayarak sağdaki hedef bilgisine geçebilirsin. Konumlar, paylaştığın Tiles Survive harita kaynağından ilham alan şematik yerleşimdir; koordinatlar gerçekte doğrulanmış değildir.</div></div><div class="panel"><div class="panel-head"><h3>Bina öncelikleri</h3><span class="pill blue">11 HEDEF</span></div><div id="siteDetails"></div></div></div><div class="panel section"><div class="panel-head"><h3>Açıkta kalan hedefler</h3></div><div id="uncoveredSites"></div></div></section>
+<section id="view-simulator" class="pageview" hidden><div class="grid g4" id="simKpis"></div><div class="panel section"><div class="panel-head"><div><h2>Su puanı simülatörü</h2><small>Kaynak hesaplayıcının FTC + üretim + tank formülü, dakika bazlı kontrol değişimleriyle genişletildi.</small></div><div class="buttonrow"><button class="btn" id="simFromPlan"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4l3 2 M21 12a9 9 0 1 1-3-6.7 M21 3v6h-6"/></svg><span>Plan varsayımını yükle</span></button><button class="btn ghost" id="simReset">Nötr başlat</button></div></div><div class="grid g4"><label class="form-field">Bizim topladığımız tank<input id="waterUs" type="number" min="0" max="1000" step="1"></label><label class="form-field">Rakibin topladığı tank<input id="waterThem" type="number" min="0" max="1000" step="1"></label><label class="form-field">Tank başına ort. su<input id="waterUnit" type="number" min="0" max="100000" step="100"></label><label class="form-field">Water Tank açılışı (dk)<input id="waterStart" type="number" min="0" max="179"></label></div><div class="section sparkbox" id="waterGraph"></div><div class="legend"><span><i style="background:#58deb6"></i>Bizim ittifak</span><span><i style="background:#ff8e9c"></i>Rakip</span><span><i style="background:#e5c47e"></i>Faz geçişi</span></div></div>
+<div class="panel section"><div class="panel-head"><div><h3>Bina kontrol senaryosu</h3><small>İki fazda varsayılan sahipliği seç. Özel zaman çizgisi yazarsan otomatik faz ayarları o bina için devre dışı kalır.</small></div><span class="pill">FTC = ilk ele geçiren</span></div><label class="form-field section">Zamanlı tank toplama (isteğe bağlı)<input id="tankEvents" placeholder="22:biz:3; 35:rakip:2" aria-describedby="tankHelp"></label><p class="help" id="tankHelp">Dakika:taraf:adet. Doluysa yukarıdaki toplam adetlerin yerine kullanılır; iki kez sayılmaz. Tank başına su değeri ortak varsayımdır.</p><div id="simTable"></div><p class="help" style="margin-top:12px">Özel olay biçimi: <code>1:biz, 18:rakip, 32:biz</code>. Her değişimde kontrol yeni sahibine geçer; puan o dakikadan sonra birikir. Bina açılmadan önceki olaylar otomatik yok sayılır. FTC yalnızca ilk gerçek ele geçirmede verilir. Tanklar toplam adetlerle açılışta veya zamanlı toplama çizelgesinde belirtilen dakikalarda eklenir. Bu hesaplama maç sonucu garantisi değildir.</p></div>
+<div class="panel section"><div class="panel-head"><h3>Bina puanları ve özel bonuslar</h3></div><div id="simBreakdown"></div></div></section>
+<section id="view-compare" class="pageview" hidden><div class="panel"><div class="panel-head"><div><span class="section-kicker">KARAR DESTEĞİ</span><h2>Hangi plan, hangi fırsat?</h2><small>Aynı kadroyla farklı yerleşimler oluşturulur. Puanlar ilan edilen kontrol varsayımlarından hesaplanır; savaş tahmini değildir.</small></div><button class="btn" id="compareReload">↻ Yeniden hesapla</button></div><div class="grid g2" id="compareCards"></div><div class="section" id="compareChart"></div><div class="source-note section">Karşılaştırma varsayımı: Yalnızca ana hedefler bizim tarafımızdan kontrol edilir; atanmayan binalar Ayarlar’daki seçime göre boş veya rakip kontrolünde varsayılır. İkincil kontrol için su simülatöründe manuel senaryo kurabilirsin. Bu yaklaşım gerçek savaşın güç, mesafe, ralli, şifa ve geçiş sürelerini tam modellemez. En yüksek tahmini puanı otomatik kazanma ihtimali olarak yorumlama.</div></div></section>
+<section id="view-battle" class="pageview" hidden><div class="panel"><span class="section-kicker">SAHA DURUMU</span><h2>Battle Control</h2><p class="help">Oyunla bağlantı kurulmaz. Skorları ve bina sahiplerini oyun ekranından okuyarak güncelleyin.</p><div class="settings-grid"><label class="form-field">Geçen süre (dk)<input id="battleMinute" type="number" min="0" step="0.5"></label><label class="form-field">Bizim mevcut skor<input id="battleUs" type="number" min="0"></label><label class="form-field">Rakip mevcut skor<input id="battleThem" type="number" min="0"></label></div><div class="scene-grid section" id="battleSites"></div><details class="section"><summary>Kullanılamayan oyuncular</summary><div class="inline-list" id="battlePlayers"></div></details><div class="section" id="battleAdvice"></div></div></section>
+<section id="view-settings" class="pageview" hidden><div class="panel"><div class="panel-head"><h2>Oyun zamanları ve kadro kuralları</h2><span class="pill blue">Tiles Survive — State of Survival değil</span></div><div class="settings-grid"><label class="form-field">Phase II açılışı (dk)<input id="setPhase2" type="number" min="1" max="179"></label><label class="form-field">Maç süresi (dk)<input id="setDuration" type="number" min="15" max="180"></label><label class="form-field">Takım sayısı<input id="setTeams" type="number" min="3" max="8"></label><label class="form-field">Bağımsız Killer sayısı<input id="setKillers" type="number" min="0" max="6"></label><label class="form-field">Asil sınırı<input id="setMainLimit" type="number" min="1" max="50"></label><label class="form-field">Yedek sınırı<input id="setReserveLimit" type="number" min="0" max="30"></label><label class="form-field">Holder / takım min.<input id="setHolderMin" type="number" min="2" max="5"></label><label class="form-field">Bina ele geçirme varsayımı (dk)<input id="setCaptureDelay" type="number" min="0" max="10"></label></div><div style="height:13px"></div><div class="settings-grid section"><label class="form-field">Tank açılışı (dk)<input id="setWaterStart" type="number" min="0" max="180"></label><label class="form-field">Atanmayan bina varsayımı<select id="setOpponent"><option value="neutral">Boş / bilinmiyor</option><option value="enemy">Rakip kontrolünde (varsayım)</option></select></label><label class="form-field">Üretim ağırlığı (0–5)<input id="weight-water" type="number" min="0" max="5" step="0.1"></label><label class="form-field">FTC ağırlığı (0–5)<input id="weight-ftc" type="number" min="0" max="5" step="0.1"></label><label class="form-field">Özel bina ağırlığı (0–5)<input id="weight-special" type="number" min="0" max="5" step="0.1"></label><label class="form-field">Savunma ağırlığı (0–5)<input id="weight-defense" type="number" min="0" max="5" step="0.1"></label><label class="form-field">Faz devamlılığı ağırlığı (0–5)<input id="weight-transition" type="number" min="0" max="5" step="0.1"></label><label class="form-field">Oyuncu tercihi ağırlığı (0–5)<input id="weight-preference" type="number" min="0" max="5" step="0.1"></label></div><p class="help">Ağırlıklar stratejik sezgidir, kazanma olasılığı değildir. Özel bina ağırlığı her özel hedef için 6.000 su eşdeğerinde başlangıç değeri kullanır; sıfırlanabilir. Savunma, girilen rakip güç açığını; devamlılık, eski garnizonu korumanın gecikme maliyetini değerlendirir.</p><button class="btn primary" id="applySettings">Ayarları uygula</button><p class="help" style="margin-top:11px">Bu planın başlangıç profili Phase I = 0–12, Phase II = 12+. Referans hesaplayıcıda Phase II = 15 ve tanklar = 20 olarak gösterilir. Senin maç ekranındaki gerçek açılışlara göre düzenle.</p></div>
+<div class="panel section"><div class="panel-head"><h3>Her binanın su üretimi ve ilk kontrol bonusu</h3><button class="btn sm" id="resetBuildings">Referans değerleri yükle</button></div><div id="buildingSettings"></div></div>
+<div class="panel section"><h3>Kaynak, yöntem ve sınırlar</h3><p class="help"><b class="note-strong">Tiles Survive hesaplayıcısı:</b> bina üretimleri, FTC ve tank formülü <a href="https://alter.github.io/tiles-survive-calculator/" target="_blank" rel="noopener">alter.github.io/tiles-survive-calculator</a> ve <a href="https://github.com/alter/tiles-survive-calculator" target="_blank" rel="noopener">açık kaynak kodu</a> temel alınarak yeniden uygulanmıştır.</p><p class="help"><b class="note-strong">Harita referansı:</b> <a href="https://note.com/open_quokka4370/n/nc5da3e0f6c5e" target="_blank" rel="noopener">Ponta@374JPN Tiles Survive su kaynağı haritası</a>. Oyuna ait bir resim gömülmemiş, sadece şematik hedef sistemi kullanılmıştır.</p><p class="help">Power değeri savaş etkinliğinde gerçek ralli, garnizon kahramanı, birlik sınıfı, savaş bonusları ve gerçek düşman gücünün yerine geçmez. Dağılımlar hesap temelli önerilerdir. Binayı tutma ve yenme olasılıkları hesaplanmaz.</p><hr class="hr"><div class="buttonrow"><button class="btn" id="jsonImport">↑ JSON strateji yükle</button><button class="btn warn" id="clearStorage">Yerel kadroyu temizle</button><input id="jsonFileInput" type="file" accept=".json" hidden></div></div></section>
+</main></div><div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script defer src="./assets/js/config.js"></script>
+<script defer src="./assets/js/validation.js"></script>
+<script defer src="./assets/js/state.js"></script>
+<script defer src="./assets/js/planner.js"></script>
+<script defer src="./assets/js/ui.js"></script>
+<script defer src="./assets/js/simulation.js"></script>
+<script defer src="./assets/js/ui-settings.js"></script>
+<script defer src="./assets/js/io.js"></script>
+<script defer src="./assets/js/battle.js"></script>
+<script defer src="./assets/js/app.js"></script></body></html>
