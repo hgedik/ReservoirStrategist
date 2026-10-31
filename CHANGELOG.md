@@ -76,3 +76,13 @@
 - Genel ele geçirme gecikmesi değişikliği otomatik senaryolara taşındı; farklı özel gecikmeler ve manuel zaman çizelgeleri korunur.
 - Kullanıcının 12 dakikalık varsayılanı korundu; isteğe bağlı 15 dakikalık referans zamanlaması eklendi.
 - 49 Node testi ve 12 tarayıcı testi geçti; kaynak formülüyle karşılaştırma denetimi eklendi.
+
+## Commander ve ayrı faz kadroları — 2026-10-31
+
+- İsteğe bağlı, en fazla bir kişilik Commander rolü eklendi; iki fazda da takım dışında kalır.
+- Faz II artık ayrı rol/takım kadrosu üretir. Commander/Killer dışındaki en güçlü üç oyuncu Central Reservoir kuvvetine ayrılır; Holder alt sınırları ve kilitler korunur.
+- Takım kartları, güçler, karşılaştırmalar, Battle Control, yedek devri ve emirler fazın gerçek atamasını kullanır.
+- Kadro tablosuna Faz II rol/takım sütunları, CSV'ye Phase II Team eklendi. JSON v3 iki fazı ve liderlerini saklar; eski planlar atamaları değiştirilmeden taşınır.
+- CSV'deki iç bina kimlikleri, eski açıklamalardaki ve bina tercihlerindeki kısa adlar tam adlara dönüştürüldü.
+- Solar Power Station / Water Treatment Center için kesinleşmemiş ek güç önerisi otomatik kural yapılmadı.
+- 62 Node testi ve 15 gerçek tarayıcı testi geçti; Commander sınırı, iki fazın kadroları, Central Reservoir yoğunlaşması, minimum Holder kadrosu, kilit çelişkileri ve önceki kaydırma/isim/hesap regresyonları doğrulandı.

@@ -71,6 +71,26 @@ document.getElementById('run').addEventListener('click',async()=>{
     assert(doc.querySelector('#simKpis .num').textContent==='457.200','Referans 60. dakika sonucu');assert(doc.getElementById('phaseWaterSummary').textContent.includes('105.600'),'Phase I sınırında yeni faz bonusu sayılmaz');
     assert(doc.getElementById('simBonuses').textContent.includes('Dev Compound'),'Aktif özel etkiler');
   });
+  let commanderId;
+  const snapshot=()=>{const original=app.download;let data;try{app.download=(name,text)=>{data=JSON.parse(text);};app.exportJSON();return data;}finally{app.download=original;}};
+  await test('Commander tek kişiyle sınırlıdır ve iki fazda da takım dışında kalır',()=>{
+    app.switchTab('roster');const initial=snapshot();commanderId=initial.players.find(p=>p.status==='main').id;const role=doc.querySelector(`[data-player="${commanderId}"][data-field="role"]`);assert(role,'İlk oyuncu satırı');role.value='commander';role.dispatchEvent(new app.Event('change',{bubbles:true}));
+    assert(doc.querySelector(`[data-player="${commanderId}"][data-field="team"]`).disabled,'Commander takım seçemez');
+    const other=doc.querySelector(`[data-player="${initial.players.filter(p=>p.status==='main')[1].id}"][data-field="role"]`),before=other.value;other.value='commander';other.dispatchEvent(new app.Event('change',{bubbles:true}));assert(other.value===before,'İkinci Commander atomik reddedilir');
+    doc.getElementById('generateBtn').click();const s=snapshot();assert(s.assign[commanderId].role==='commander'&&s.assign[commanderId].team==='','Faz I Commander');assert(s.assignP2[commanderId].role==='commander'&&s.assignP2[commanderId].team==='','Faz II Commander');assert(app.planErrors(s).length===0,'Geçerli plan');
+    assert(!doc.getElementById('commanderSummary').textContent.includes('seçilmedi'),'Komuta özeti');
+  });
+  await test('Faz II kartları yeniden kurulan kadroyu ve en güçlü üç oyuncuyu Central Reservoir’da gösterir',()=>{
+    const s=snapshot(),field=s.players.filter(p=>p.status==='main'&&!['commander','killer'].includes(s.assign[p.id].role)).sort((a,b)=>b.power-a.power||a.id.localeCompare(b.id)),top=field.slice(0,3);
+    app.switchTab('teams');doc.querySelector('[data-phase="1"]').click();const first=[...doc.querySelectorAll('.team-card')].map(card=>[...card.querySelectorAll('.member-name')].map(e=>e.textContent).join('|')).join('/');
+    doc.querySelector('[data-phase="2"]').click();const second=[...doc.querySelectorAll('.team-card')].map(card=>[...card.querySelectorAll('.member-name')].map(e=>e.textContent).join('|')).join('/');assert(first!==second,'Oyuncular fazlar arasında takım değiştirir');
+    for(const p of top){const team=s.assignP2[p.id].team,card=doc.querySelector(`[aria-label="${team} takım planı"]`);assert(card.querySelector('[data-target-key="p2"]').value==='central','Central hedefi');assert([...card.querySelectorAll('.member-name')].some(e=>e.textContent===p.name),'Güçlü oyuncu doğru kartta');}
+    for(const card of doc.querySelectorAll('.team-card'))assert(![...card.querySelectorAll('.member-name')].some(e=>e.textContent===s.players.find(p=>p.id===commanderId).name),'Commander kart dışında');
+  });
+  await test('Kadro tablosu iki fazı gösterir ve JSON iki kadroyu ayrı korur',()=>{
+    const s=snapshot();app.switchTab('roster');const moved=s.players.find(p=>p.status==='main'&&s.assign[p.id].team!==s.assignP2[p.id].team);assert(moved,'Yer değiştiren oyuncu');const row=doc.querySelector(`[data-roster-row="${moved.id}"]`);
+    assert(row.querySelector('[data-field="team"]').value===s.assign[moved.id].team,'Faz I takımı');assert(row.querySelector('[data-phase-two-team]').textContent===s.assignP2[moved.id].team,'Faz II takımı');assert(s.version===3&&Object.keys(s.assignP2).length===30,'JSON v3 ayrı faz kadrosu');
+  });
   output.textContent+=`\n${passed} passed, ${failed} failed`;button.disabled=false;
 });
 

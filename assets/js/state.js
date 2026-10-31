@@ -9,11 +9,15 @@ function autosave(){dirty=true;try{localStorage.setItem('rr-strategy-commander-v
 function toast(s,error){const el=$('toast');el.textContent=s;el.style.background=error?'#4d2c38':'#23443f';el.hidden=false;clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.hidden=true,3500)}
 function selected(){return state.players.filter(p=>p.status==='main')}
 function reserve(){return state.players.filter(p=>p.status==='reserve')}
-function getAssign(p){return state.assign[p.id]||{role:'support',team:''}}
+function phaseAssignment(s=state,phase=1){return phase===2?(s.assignP2||s.assign):s.assign}
+function getAssign(p,phase=1){return phaseAssignment(state,phase)[p.id]||{role:'support',team:''}}
+function phaseLeaders(s=state,phase=1){return phase===2?(s.leadersP2||{}):s.leaders}
 function teamId(i){return 'T'+(i+1)}
 function bById(id){return state.buildings.find(x=>x.id===id)}
 function siteName(id){return bById(id)?.name||({water:'Water Tanks toplama',reinforce:'Hızlı destek'})[id]||'—'}
+function displaySitePreference(value,s=state){const id=resolveSite(value,s);return id?s.buildings.find(b=>b.id===id).name:String(value||'')}
 function teamPower(members){return members.reduce((s,p)=>s+p.power,0)}
-function teamsFrom(assign=state.assign){return Array.from({length:state.config.teams},(_,i)=>{let id=teamId(i);let players=selected().filter(p=>assign[p.id]?.team===id&&assign[p.id]?.role!=='killer');return {id,players,power:teamPower(players),holders:players.filter(p=>assign[p.id]?.role==='holder'),support:players.filter(p=>assign[p.id]?.role==='support')};})}
+function teamsFrom(assign=state.assign,s=state){return Array.from({length:s.config.teams},(_,i)=>{let id=teamId(i);let players=s.players.filter(p=>p.status==='main'&&assign[p.id]?.team===id&&!independentRole(assign[p.id]?.role));return {id,players,power:teamPower(players),holders:players.filter(p=>assign[p.id]?.role==='holder'),support:players.filter(p=>assign[p.id]?.role==='support')};})}
+function commanderPlayers(assign=state.assign){return selected().filter(p=>assign[p.id]?.role==='commander')}
 function killerPlayers(assign=state.assign){return selected().filter(p=>assign[p.id]?.role==='killer')}
 function siteTargetRanking(mode,phase){let ids=[...TACTICS[mode].phase1];if(phase===2)ids=[...TACTICS[mode].phase2];return ids}

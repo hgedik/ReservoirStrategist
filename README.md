@@ -10,15 +10,25 @@ R4 subayları için kadro, takım, faz görevleri ve su puanı planlayıcısı. 
 4. Ayarlar'da zamanları, üretim/FTC değerlerini, öncelikleri, rakip Power varsayımlarını ve strateji ağırlıklarını düzenleyin. Referans hesaplayıcıyla aynı zamanlama için **Referans zamanlamasını uygula** seçeneği Phase II=15, maç=60, tank=20 ve ele geçirme gecikmesi=0 dk yapar; varsayılan 12 dk seçiminiz kendiliğinden değiştirilmez. Atanmayan bina varsayılan olarak boş/bilinmiyor kabul edilir.
 5. Beş stratejinin dağılımını ve fırsat maliyetini karşılaştırın. Takım kartlarında gerekçe, Holder devri, takviye ve geri çekilme yönergelerini açın.
 6. Su Hesaplayıcı'da `1:biz; 18:rakip; 27:biz` gibi kontrol olayları girin. Kesirli dakikalar desteklenir. Tank çizelgesi `22:biz:3; 35:rakip:2` biçimindedir; doluysa toplam tank adetlerinin yerini alır.
-7. Battle Control'de gerçek skor ve bina sahipliğini elle girin; mevcut kontrolün sürmesi ve Central seçeneğinin koşullu projeksiyonlarını inceleyin.
+7. Battle Control'de gerçek skor ve bina sahipliğini elle girin; mevcut kontrolün sürmesi ve Central Reservoir seçeneğinin koşullu projeksiyonlarını inceleyin.
 
 Rol/takım değişiklikleri geçici bir taslak oluşturabilir; eksikler uyarılarda görünür. Geçersiz planın emir çıktısı engellenir. Yedek değişimi, asil oyuncunun görev ve kilitlerini tek işlemde devreder. Tüm kilitleri kaldırmak için açık sıfırlama düğmesi vardır.
 
 Oyuncu Kadrosu ekranındaki **JSON dışa aktar** düğmesi, filtrelenmiş görünümden bağımsız olarak tüm kadroyu, ayarları ve kilitleri mevcut yedek formatında indirir. **Sırala** alanından Power, Kadro, Rol veya Takım; **Sıra** alanından Artan/Azalan seçilebilir. Eklenme sırası seçeneği ilk sıraya döner. Sıralama kayıtlı kadro dizisini değiştirmez. Oyuncu alanları düzenlendiğinde mevcut kaydırma ve odak korunur.
 
+## Commander ve faz kadroları
+
+Oyuncu Kadrosu'nda asil bir oyuncunun **Rol** alanından **Commander** seçebilirsiniz. İsteğe bağlıdır; en fazla bir kişi olabilir. Commander iki fazda da takım dışında kalır, Killer sayısını veya takım gücünü doldurmaz. Takım kilidi varsa rolü değiştirmeden önce kaldırın. Commander dahil toplam asil sınırı geçerlidir.
+
+**Planı optimize et**, Faz I ve Faz II için ayrı rol/takım atamaları üretir. Faz II'de Commander ve Killer dışındaki en güçlü üç asil oyuncu Central Reservoir ekiplerine ayrılır. Her takımın Holder alt sınırı korunur; gerekiyorsa bu üç oyuncu birden fazla Central Reservoir takımına bölünür. İki fazda rol/takım kilitleri geçerlidir. Çelişen kilitler mevcut planı değiştirmeden hata verir. Kilitsiz Holder/Support görevleri faza göre değişebilir; Commander ve Killer görevleri iki fazda sabittir.
+
+Takım ve Fazlar ekranındaki faz düğmeleri gerçek faz kadrosunu gösterir. Kadro tablosunun düzenlenebilir rol/takım alanları Faz I içindir ve düzenleme iki faz için kilit oluşturur; yanındaki Faz II sütunları üretilmiş ikinci faz atamasını gösterir. Ana görev tablosu iki fazın güçlerini birlikte gösterir. Yedek değişimi her iki fazın görevlerini devreder. CSV tam bina adlarını, iki fazın rollerini ve ayrıca **Phase II Team** sütununu içerir; JSON her iki kadroyu, liderleri ve kilitleri eksiksiz korur. Kesin plan taşıması için JSON kullanın.
+
+Eski kaydı açarken mevcut kadro korunur ve Faz II'ye kopyalanır; en güçlü üç oyuncu kuralı sağlanmıyorsa plan uyarısı görünür. Yeni dağılım için planı yeniden üretin. Solar Power Station / Water Treatment Center binalarına ek güç ayırma fikri henüz zorunlu kural değildir; mevcut öncelik/rakip güç ayarları kullanılabilir.
+
 ## Kayıt ve yayın
 
-Tam JSON yedeği ayarları, oyuncuları, kilitleri, simülasyonu ve manuel saha verilerini korur. v1 yedekleri v2'ye taşınır. Bozuk içe aktarma mevcut kaydı değiştirmez. Mevcut kilitler yüklemede de korunur; bilerek değiştirmek istiyorsanız önce kaldırın.
+Tam JSON yedeği ayarları, oyuncuları, kilitleri, simülasyonu ve manuel saha verilerini korur. v1/v2 yedekleri v3'e taşınır; eski atamalar otomatik olarak değiştirilmez. Bozuk içe aktarma mevcut kaydı değiştirmez. Mevcut kilitler yüklemede de korunur; bilerek değiştirmek istiyorsanız önce kaldırın.
 
 Tarayıcı kaydı `rr-strategy-commander-v1` anahtarını kullanmaya devam eder. Yerel dosyadan GitHub Pages'e geçişte köken değişeceği için JSON dışa/içe aktarma kullanın.
 

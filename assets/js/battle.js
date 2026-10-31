@@ -8,10 +8,11 @@ function normalizeBattle(raw,config,buildings,players){
   b.sites=Object.fromEntries(buildings.map(site=>{const row={owner:'none',vulnerable:false,...b.sites[site.id]};if(!['none','us','them'].includes(row.owner)||typeof row.vulnerable!=='boolean')fail('Geçersiz saha kontrolü.');return [site.id,row];}));return b;
 }
 function battleAssessment(s=state){
+  const assign=phaseAssignment(s,s.battle.minute<s.config.phase2?1:2);
   const b=s.battle,left=s.config.duration-b.minute,unlocked=site=>site.phase===1||b.minute>=s.config.phase2;
   const rates={us:0,them:0};for(const site of s.buildings)if(unlocked(site)&&b.sites[site.id]?.owner!=='none')rates[b.sites[site.id].owner]+=site.rate;
   const warnings=[];for(const site of s.buildings){const row=b.sites[site.id];if(row.owner!=='us'||!unlocked(site))continue;
-    const assigned=s.players.filter(p=>s.assign[p.id]?.role==='holder'&&s.targets[b.minute<s.config.phase2?'p1':'p2'][s.assign[p.id]?.team]===site.id&&!b.disabled.includes(p.id));
+    const assigned=s.players.filter(p=>assign[p.id]?.role==='holder'&&s.targets[b.minute<s.config.phase2?'p1':'p2'][assign[p.id]?.team]===site.id&&!b.disabled.includes(p.id));
     if(row.vulnerable||assigned.length<s.config.holderMin)warnings.push(`${site.name}: garnizon riskli; ${assigned.length} kullanılabilir planlı Holder. R4 saha durumunu doğrulasın.`);
   }
   const projectedUs=b.scoreUs+rates.us*left,projectedThem=b.scoreThem+rates.them*left;
@@ -19,7 +20,7 @@ function battleAssessment(s=state){
   const central=s.buildings.find(x=>x.id==='central');let alternative=null;
   if(b.minute>=s.config.phase2&&b.sites.central.owner!=='us'&&left>s.config.captureDelay){
     const key='p2',teams=Array.from({length:s.config.teams},(_,i)=>teamId(i));
-    const candidates=teams.map(team=>{const old=s.buildings.find(x=>x.id===s.targets[key][team]),members=s.players.filter(p=>s.assign[p.id]?.team===team&&!b.disabled.includes(p.id)),holders=members.filter(p=>s.assign[p.id].role==='holder');
+    const candidates=teams.map(team=>{const old=s.buildings.find(x=>x.id===s.targets[key][team]),members=s.players.filter(p=>assign[p.id]?.team===team&&!b.disabled.includes(p.id)),holders=members.filter(p=>assign[p.id].role==='holder');
       const sole=old&&Object.values(s.targets[key]).filter(id=>id===old.id).length===1&&b.sites[old.id]?.owner==='us';
       const cost=sole?old.rate*left:0,gain=central.rate*Math.max(0,left-s.config.captureDelay)-cost;return {team,gain,cost,old,power:teamPower(members),holders};
     }).filter(t=>t.holders.length>=s.config.holderMin).sort((a,b)=>b.gain-a.gain||b.power-a.power);

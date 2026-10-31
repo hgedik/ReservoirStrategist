@@ -1,5 +1,5 @@
 'use strict';
-function commitEdit(candidate){candidate.explanations={};if(candidate.battle)candidate.battle.disabled=candidate.battle.disabled.filter(id=>candidate.players.some(p=>p.id===id&&p.status==='main'));state=normalizeState(candidate);autosave();renderAll();}
+function commitEdit(candidate){candidate.explanations={};pruneLeaders(candidate);if(candidate.battle)candidate.battle.disabled=candidate.battle.disabled.filter(id=>candidate.players.some(p=>p.id===id&&p.status==='main'));state=normalizeState(candidate);autosave();renderAll();}
 function handlePlayerChange(el){
   const before=state,candidate=deepcopy(state),p=candidate.players.find(p=>p.id===el.dataset.player);if(!p)return;
   const f=el.dataset.field,v=el.type==='checkbox'?el.checked:el.value,a=candidate.assign[p.id]||{role:'support',team:''};
@@ -9,15 +9,15 @@ function handlePlayerChange(el){
     else if(f==='killerSuitability')p.killerSuitability=finiteValue(v,'Killer uygunluğu',0,5);
     else if(f==='notes')p.notes=v;
     else if(f==='rolePref'){if(p.roleLock)fail('Tercihi değiştirmeden önce rol kilidini kaldırın.');p.rolePref=v;}
-    else if(f==='status'){if(p.roleLock||p.teamLock)fail('Kadro durumunu değiştirmeden önce kilitleri kaldırın.');p.status=v;if(v==='main'){if(candidate.players.filter(p=>p.status==='main').length>candidate.config.mainLimit)fail('Asil sınırı dolu. Yedek değişimi kullanın.');candidate.assign[p.id]={role:'support',team:'T1'};}else delete candidate.assign[p.id];}
+    else if(f==='status'){if(p.roleLock||p.teamLock)fail('Kadro durumunu değiştirmeden önce kilitleri kaldırın.');p.status=v;if(v==='main'){if(candidate.players.filter(p=>p.status==='main').length>candidate.config.mainLimit)fail('Asil sınırı dolu. Yedek değişimi kullanın.');candidate.assign[p.id]={role:'support',team:'T1'};candidate.assignP2[p.id]={role:'support',team:'T1'};}else {delete candidate.assign[p.id];delete candidate.assignP2[p.id];}}
     else if(['coming','joined','contacted','roleLock','teamLock'].includes(f)){
-      if(f==='teamLock'&&v&&(!a.team||a.role==='killer'||p.status!=='main'))fail('Yalnızca takımdaki aktif oyuncu kilitlenebilir.');
-      if(f==='roleLock'&&v&&p.status!=='main')fail('Yalnızca asil oyuncu rolü kilitlenebilir.');p[f]=v;if(f==='roleLock'&&v)p.rolePref=a.role;
+      if(f==='teamLock'&&v&&(!a.team||independentRole(a.role)||p.status!=='main'))fail('Yalnızca takımdaki aktif oyuncu kilitlenebilir.');
+      if(f==='roleLock'&&v&&p.status!=='main')fail('Yalnızca asil oyuncu rolü kilitlenebilir.');p[f]=v;if(f==='teamLock'&&v&&candidate.assignP2[p.id])candidate.assignP2[p.id].team=a.team;if(f==='roleLock'&&v){p.rolePref=a.role;if(candidate.assignP2[p.id])candidate.assignP2[p.id].role=a.role;}
     }else if(f==='role'){
-      if(!ROLES.includes(v))fail('Geçersiz rol.');if(v==='killer'&&p.teamLock)fail('Killer seçmeden önce takım kilidini kaldırın.');
-      a.role=v;p.rolePref=v;p.roleLock=true;if(v==='killer')a.team='';else if(!a.team)a.team=teamsFrom().sort((x,y)=>x.players.length-y.players.length)[0]?.id||'T1';candidate.assign[p.id]=a;
-    }else if(f==='team'){if(a.role==='killer')fail('Killer takıma atanamaz.');a.team=v;p.teamLock=true;candidate.assign[p.id]=a;}
-    for(const [team,id] of Object.entries(candidate.leaders))if(candidate.assign[id]?.team!==team||candidate.assign[id]?.role!=='holder')delete candidate.leaders[team];
+      if(!ROLES.includes(v))fail('Geçersiz rol.');if(independentRole(v)&&p.teamLock)fail(ROLE_LABEL[v]+' seçmeden önce takım kilidini kaldırın.');
+      a.role=v;p.rolePref=v;p.roleLock=true;if(independentRole(v))a.team='';else if(!a.team)a.team=teamsFrom().sort((x,y)=>x.players.length-y.players.length)[0]?.id||'T1';candidate.assign[p.id]=a;const next=candidate.assignP2[p.id]||{...a};next.role=v;if(independentRole(v))next.team='';else if(!next.team)next.team=a.team;candidate.assignP2[p.id]=next;
+    }else if(f==='team'){if(independentRole(a.role))fail(ROLE_LABEL[a.role]+' takıma atanamaz.');a.team=v;p.teamLock=true;candidate.assign[p.id]=a;if(candidate.assignP2[p.id])candidate.assignP2[p.id].team=v;}
+    pruneLeaders(candidate);
     commitEdit(candidate);
   }catch(e){state=before;const original=before.players.find(p=>p.id===el.dataset.player);if(original){const a=getAssign(original);if(el.type==='checkbox')el.checked=!!original[f];else el.value=f==='role'?a.role:f==='team'?a.team:f==='power'?fmt(original.power,2):original[f]??'';}toast(e.message,true);renderAll();}
 }
@@ -26,8 +26,8 @@ function updateSettings(changes){
     if(candidate.config.captureDelay!==state.config.captureDelay)for(const row of Object.values(candidate.sim.buildings))if(!String(row.events||'').trim())for(const key of ['delay1','delay2'])if(row[key]===state.config.captureDelay)row[key]=candidate.config.captureDelay;
     for(const key of TARGET_KEYS)for(const team of Object.keys(candidate.targets[key]))if(Number(team.slice(1))>candidate.config.teams){if(candidate.targetLocks[key][team])fail(team+': hedef kilidini kaldırmadan takım sayısı azaltılamaz.');delete candidate.targets[key][team];delete candidate.targetLocks[key][team];}
     if(!candidate.players.length){state=normalizeState(candidate);autosave();renderAll();toast('Ayarlar kaydedildi; şimdi kadronuzu içe aktarabilirsiniz.');return;}
-    const plan=generatePlan(candidate.config.mode,candidate);candidate.assign=plan.assign;candidate.targets=plan.targets;candidate.explanations=plan.explanations;candidate.lastGenerated=new Date().toISOString();
-    for(const [team,id] of Object.entries(candidate.leaders))if(candidate.assign[id]?.team!==team||candidate.assign[id]?.role!=='holder')delete candidate.leaders[team];
+    const plan=generatePlan(candidate.config.mode,candidate);candidate.assign=plan.assign;candidate.assignP2=plan.assignP2;candidate.targets=plan.targets;candidate.explanations=plan.explanations;candidate.lastGenerated=new Date().toISOString();
+    pruneLeaders(candidate);
     state=normalizeState(candidate);autosave();renderAll();toast('Ayarlar ve plan kilitler korunarak güncellendi.');
   }catch(e){toast(e.message,true);renderAll();}
 }
@@ -40,14 +40,14 @@ function replacePlayer(){try{
   const c=deepcopy(state),old=c.players.find(p=>p.id===$('replaceOut').value),next=c.players.find(p=>p.id===$('replaceIn').value);
   if(!old||old.status!=='main'||!next||next.status!=='reserve')fail('Bir asil ve bir yedek seçin.');
   const a=c.assign[old.id];c.battle.disabled=c.battle.disabled.filter(id=>id!==old.id);next.status='main';old.status='reserve';next.rolePref=a?.role||'support';next.roleLock=old.roleLock;next.teamLock=old.teamLock;old.roleLock=false;old.teamLock=false;
-  delete c.assign[old.id];if(a)c.assign[next.id]=a;for(const team of Object.keys(c.leaders))if(c.leaders[team]===old.id)c.leaders[team]=next.id;
+  const a2=c.assignP2[old.id];delete c.assign[old.id];delete c.assignP2[old.id];if(a)c.assign[next.id]=a;if(a2)c.assignP2[next.id]=a2;for(const phase of [1,2])for(const team of Object.keys(phaseLeaders(c,phase)))if(phaseLeaders(c,phase)[team]===old.id)phaseLeaders(c,phase)[team]=next.id;
   const errors=planErrors(c);if(errors.length)fail(errors.join('\n'));commitEdit(c);toast('Yedek oyuncu asil oyuncunun görevini devraldı.');
  }catch(e){toast(e.message,true);}}
-function resetLocks(){if(!confirm('Tüm rol, takım, lider ve hedef kilitleri kaldırılsın mı?'))return;for(const p of state.players){p.roleLock=false;p.teamLock=false;}state.targetLocks=Object.fromEntries(TARGET_KEYS.map(k=>[k,{}]));state.leaders={};autosave();renderAll();toast('Kilitler kaldırıldı; mevcut atamalar korundu.');}
+function resetLocks(){if(!confirm('Tüm rol, takım, lider ve hedef kilitleri kaldırılsın mı?'))return;for(const p of state.players){p.roleLock=false;p.teamLock=false;}state.targetLocks=Object.fromEntries(TARGET_KEYS.map(k=>[k,{}]));state.leaders={};state.leadersP2={};autosave();renderAll();toast('Kilitler kaldırıldı; mevcut atamalar korundu.');}
 function bindEvents(){
   document.addEventListener('click',ev=>{const target=ev.target.closest('button,[data-map-site]');if(!target)return;const tab=target.dataset.tab||target.dataset.jumptab;if(tab){switchTab(tab);return;}
     if(target.dataset.mapSite){selectedSite=target.dataset.mapSite;renderBattlefield();return;}
-    if(target.dataset.removePlayer){const p=state.players.find(p=>p.id===target.dataset.removePlayer);if(p.roleLock||p.teamLock){toast('Silmeden önce oyuncunun kilitlerini kaldırın.',true);return;}if(!confirm('Bu oyuncu silinsin mi?'))return;const c=deepcopy(state);c.players=c.players.filter(p=>p.id!==target.dataset.removePlayer);delete c.assign[target.dataset.removePlayer];for(const team of Object.keys(c.leaders))if(c.leaders[team]===p.id)delete c.leaders[team];commitEdit(c);return;}
+    if(target.dataset.removePlayer){const p=state.players.find(p=>p.id===target.dataset.removePlayer);if(p.roleLock||p.teamLock){toast('Silmeden önce oyuncunun kilitlerini kaldırın.',true);return;}if(!confirm('Bu oyuncu silinsin mi?'))return;const c=deepcopy(state);c.players=c.players.filter(p=>p.id!==target.dataset.removePlayer);delete c.assign[target.dataset.removePlayer];delete c.assignP2[target.dataset.removePlayer];pruneLeaders(c);commitEdit(c);return;}
     if(target.dataset.compareUse){if(recomputePlan(target.dataset.compareUse)){resetSimulationFromPlan(false);autosave();switchTab('teams');}return;}
     if(target.dataset.phase){currentPhase=Number(target.dataset.phase);renderTeams();return;}
     switch(target.id){
@@ -70,7 +70,7 @@ function bindEvents(){
     if(el.dataset.player){handlePlayerChange(el);return;}
     if(el.dataset.targetTeam){const c=deepcopy(state),team=el.dataset.targetTeam,key=el.dataset.targetKey;if(!validTarget(c,team,key,el.value))fail('Bu faz için geçersiz hedef.');c.targets[key][team]=el.value;c.targetLocks[key][team]=true;commitEdit(c);return;}
     if(el.dataset.targetLock){state.targetLocks[el.dataset.targetKey][el.dataset.targetLock]=el.checked;autosave();return;}
-    if(el.dataset.leader){const c=deepcopy(state),id=el.value,team=el.dataset.leader;c.leaders[team]=id;if(id){const p=c.players.find(p=>p.id===id);p.teamLock=true;p.roleLock=true;p.rolePref='holder';}commitEdit(c);return;}
+    if(el.dataset.leader){const c=deepcopy(state),id=el.value,team=el.dataset.leader;phaseLeaders(c,currentPhase)[team]=id;if(id){const p=c.players.find(p=>p.id===id);p.teamLock=true;p.roleLock=true;p.rolePref='holder';for(const phase of [1,2]){const a=phaseAssignment(c,phase)[id];a.role='holder';a.team=phaseAssignment(c,currentPhase)[id].team;}}commitEdit(c);return;}
     if(el.dataset.simSite||el.id==='tankEvents'){
       const c=deepcopy(state);if(el.dataset.simSite){c.sim.buildings[el.dataset.simSite]||=emptySimRow();c.sim.buildings[el.dataset.simSite][el.dataset.simField]=el.value;}else c.sim.tankEvents=el.value;
       evaluateScenario(c.sim,c.config,c.buildings);state=c;autosave();renderSimulator();return;
